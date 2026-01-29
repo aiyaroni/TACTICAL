@@ -121,23 +121,55 @@ export default function StrategicSonar() {
 
             {/* Blips */}
             <div className="absolute inset-0 flex items-center justify-center z-20">
-                {blips.map((blip) => (
-                    <motion.div
-                        key={blip.id}
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="absolute flex flex-col items-center justify-center"
-                        style={{
-                            transform: `translate(${blip.x * 2}px, ${blip.y * 2}px)`, // Scale factor for visibility
-                        }}
-                    >
-                        <div className="relative">
-                            <div className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] animate-ping absolute inset-0 opacity-75"></div>
-                            <div className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] relative z-10"></div>
-                        </div>
-                        <span className="mt-1 text-[8px] font-mono text-tactical-teal whitespace-nowrap">{blip.callsign || blip.icao24}</span>
-                    </motion.div>
-                ))}
+                {blips.map((blip) => {
+                    const riskNum = parseInt(riskLevel);
+                    // Tier 1: Low Risk (Green Dots)
+                    if (riskNum <= 40) {
+                        return (
+                            <motion.div
+                                key={blip.id}
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="absolute"
+                                style={{ transform: `translate(${blip.x * 2}px, ${blip.y * 2}px)` }}
+                            >
+                                <div className="h-1.5 w-1.5 rounded-full bg-emerald-500 shadow-[0_0_8px_#10B981] animate-pulse"></div>
+                            </motion.div>
+                        );
+                    }
+                    // Tier 2: Medium Risk (Amber Dots)
+                    else if (riskNum <= 70) {
+                        return (
+                            <motion.div
+                                key={blip.id}
+                                initial={{ opacity: 0, scale: 0 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="absolute"
+                                style={{ transform: `translate(${blip.x * 2}px, ${blip.y * 2}px)` }}
+                            >
+                                <div className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_#F59E0B] animate-ping opacity-75 absolute inset-0"></div>
+                                <div className="h-2 w-2 rounded-full bg-amber-500 shadow-[0_0_8px_#F59E0B] relative z-10"></div>
+                            </motion.div>
+                        );
+                    }
+                    // Tier 3: High Risk (Fighter Jets - Coyote Tan)
+                    else {
+                        return (
+                            <motion.div
+                                key={blip.id}
+                                initial={{ scale: 0, rotate: 0 }}
+                                animate={{ scale: 1, rotate: Math.random() * 360 }} // Ideally use heading
+                                className="absolute flex flex-col items-center justify-center"
+                                style={{ transform: `translate(${blip.x * 2}px, ${blip.y * 2}px)` }}
+                            >
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-coyote-tan drop-shadow-[0_0_5px_rgba(194,163,130,0.8)]">
+                                    <path d="M12 2L2 22l10-3 10 3L12 2z" />
+                                </svg>
+                                <span className="mt-1 text-[7px] font-mono text-coyote-tan/80 whitespace-nowrap">{blip.callsign || blip.icao24}</span>
+                            </motion.div>
+                        );
+                    }
+                })}
             </div>
 
             {/* Corner Decorators */}

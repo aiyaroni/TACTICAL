@@ -19,7 +19,7 @@ export default function MetricCard({ title, value, subLabel, icon: Icon, childre
 
             {/* Top Row: Icon + Category */}
             <div className="flex items-center justify-between mb-4">
-                {Icon && <Icon className="h-5 w-5 text-coyote-tan/50" />}
+                {Icon && <Icon className="h-5 w-5 scale-110 text-coyote-tan/50" />}
                 <span className="font-mono text-[10px] tracking-[0.2em] text-coyote-tan/40 uppercase">{title}</span>
             </div>
 
@@ -40,7 +40,7 @@ export default function MetricCard({ title, value, subLabel, icon: Icon, childre
             {/* Bottom Label */}
             {subLabel && (
                 <div className="border-t border-white/5 pt-2 text-center">
-                    <div className="font-mono text-[9px] tracking-widest text-coyote-tan/40 uppercase">{subLabel}</div>
+                    <div className="font-mono text-xs tracking-widest text-coyote-tan/90 uppercase">{subLabel}</div>
                 </div>
             )}
 

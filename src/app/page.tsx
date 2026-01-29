@@ -48,14 +48,14 @@ export default function Home() {
   const glowingWhite = "stroke-white drop-shadow-[0_0_3px_rgba(255,255,255,0.8)]";
 
   return (
-    <div className="min-h-screen flex flex-col bg-matte-black text-coyote-tan font-mono overflow-hidden">
+    <div className="h-screen w-screen flex flex-col bg-matte-black text-coyote-tan font-mono overflow-hidden selection:bg-tactical-teal/20 selection:text-white">
       <TacticalHeader />
 
-      <main className="flex-1 p-6 relative">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-[calc(100vh-140px)]">
+      <main className="flex-1 p-6 relative h-[calc(100vh-80px)] overflow-hidden">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
 
           {/* LEFT COLUMN (Cols 1-3): METRICS VERTICAL STACK */}
-          <div className="lg:col-span-3 flex flex-col gap-6 h-full overflow-y-auto noscroll">
+          <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
 
             {/* 1. ASSETS */}
             <MetricCard
@@ -71,7 +71,7 @@ export default function Home() {
             {/* 2. E-WARFARE */}
             <MetricCard
               title="E-WARFARE"
-              value={`${ewJamming.toFixed(0)}%`}
+              value={`${Math.round(ewJamming)}%`}
               subLabel="GPS INTERFERENCE"
               icon={Radio}
             >
@@ -92,29 +92,29 @@ export default function Home() {
 
           {/* CENTER COLUMN (Cols 4-9): STRATEGIC SONAR */}
           <div className="lg:col-span-6 flex flex-col items-center justify-center relative">
-            <div className="absolute top-0 left-0 w-full flex items-center justify-between px-4">
-              <h2 className="text-[10px] tracking-[0.3em] font-bold text-tactical-teal/70 uppercase">
+            <div className="absolute top-10 left-0 w-full flex items-center justify-between px-10 z-[50] mix-blend-difference pointer-events-none">
+              <h2 className="text-xs tracking-[0.4em] font-bold text-tactical-teal uppercase opacity-80 backdrop-blur-sm">
                 Live Feed // Sector 7
               </h2>
-              <div className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-[9px] tracking-widest text-red-500 uppercase">Realtime</span>
+              <div className="flex items-center gap-2 backdrop-blur-sm">
+                <span className="h-1.5 w-1.5 bg-red-500 rounded-full animate-pulse shadow-[0_0_5px_red]" />
+                <span className="text-[10px] tracking-widest text-red-500 uppercase font-bold">Realtime</span>
               </div>
             </div>
 
             {/* Make Radar Large */}
-            <div className="w-full max-w-3xl transform scale-110">
+            <div className="w-full max-w-4xl transform scale-100 z-0">
               <StrategicSonar />
             </div>
           </div>
 
           {/* RIGHT COLUMN (Cols 10-12): MARKET & INTEL */}
-          <div className="lg:col-span-3 flex flex-col gap-6 h-full">
+          <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
 
             {/* 4. MARKET */}
             <MetricCard
               title="MARKET"
-              value={`${predictionOdds}%`}
+              value={`${Math.round(predictionOdds)}%`}
               subLabel="PREDICTION ODDS"
               icon={TrendingUp}
             >
@@ -122,7 +122,7 @@ export default function Home() {
             </MetricCard>
 
             {/* INTEL FEED */}
-            <div className="flex-1 w-full min-h-0">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <IntelDebunker />
             </div>
           </div>
