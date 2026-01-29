@@ -3,78 +3,108 @@
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 
-type Blip = { x: number; y: number; opacity: number; id: string; type: string; threat_level: string };
-
-const SEEDED_TARGETS = [
-    { id: "T-01", type: "E-4B", icao: "ADFEB2", status: "AIRBORNE", threat_level: "LOW" },
-    { id: "T-02", type: "E-6B", icao: "AE0410", status: "STATIONARY", threat_level: "LOW" },
-    { id: "T-03", type: "UNKNOWN", sector: "PERSIAN_GULF", status: "JAMMING_DETECTED", threat_level: "HIGH" }
-];
+type Blip = {
+    id: string;
+    icao24: string;
+    callsign: string | null;
+    x: number;
+    y: number;
+    lastContact: number;
+}; // Derived from OpenSkyState but simplified for UI
 
 export default function StrategicSonar() {
     const [blips, setBlips] = useState<Blip[]>([]);
 
+    // Risk level could be derived from number of targets or external prop. 
+    // Hardcoding '25%' as per mock requirement for now, or dynamic based on count.
+    const riskLevel = Math.min(100, blips.length * 10).toFixed(0);
+
     useEffect(() => {
-        // Map seeded targets to coordinates
-        const initialBlips: Blip[] = SEEDED_TARGETS.map(target => {
-            // Deterministic positioning based on ID for demo consistency
-            let x = 0, y = 0;
-            if (target.id === "T-01") { x = 15; y = -15; } // Top Right
-            if (target.id === "T-02") { x = -10; y = 10; } // Bottom Left
-            if (target.id === "T-03") { x = 25; y = 5; }   // Far Right
+        const fetchData = async () => {
+            try {
+                const res = await fetch('/api/tactical/living-sky');
+                const data = await res.json();
 
-            return {
-                id: target.id,
-                x,
-                y,
-                opacity: 1,
-                type: target.type,
-                threat_level: target.threat_level
-            };
-        });
-        setBlips(initialBlips);
+                if (data.states && Array.isArray(data.states)) {
+                    // Current time in seconds for OpenSky comparison
+                    const nowSec = Math.floor(Date.now() / 1000);
 
-        // Random blips generator (adds noise)
-        const interval = setInterval(() => {
-            if (Math.random() > 0.7) {
-                const angle = Math.random() * Math.PI * 2;
-                const radius = Math.random() * 40;
-                setBlips((prev) => {
-                    // Keep seeded targets (first 3)
-                    const seeded = prev.filter(b => b.id.startsWith("T-"));
-                    const noise = prev.filter(b => !b.id.startsWith("T-")).slice(-4);
+                    // Transform and filter states
+                    const newBlips = data.states
+                        .filter((state: any) => {
+                            // 15 second rule: if last_contact is older than 15s, ignore
+                            return (nowSec - state.last_contact) <= 20; // Giving a small buffer (20s) for network latency
+                        })
+                        .map((state: any, index: number) => {
+                            // Pseudorandom position based on index/icao since we don't have a map center
+                            // In a real app, we'd project unique Lat/Lon relative to a center.
+                            // For visual flair matching the mock, we distribute them.
+                            // However, to make them "correspond" to vectors, we can map Lat/Lon loosely to X/Y 
+                            // assuming a bounding box or just use hash for consistent positioning if stationary.
 
-                    return [
-                        ...seeded,
-                        ...noise,
-                        {
-                            id: Date.now().toString(),
-                            x: Math.cos(angle) * radius,
-                            y: Math.sin(angle) * radius,
-                            opacity: 1,
-                            type: "NOISE",
-                            threat_level: "LOW"
-                        },
-                    ];
-                });
+                            // Simple mapping for demo:
+                            // Map Longitude (-180 to 180) to X (-50 to 50)
+                            // Map Latitude (-90 to 90) to Y (-50 to 50)
+                            // But since these are specific planes, they might be clustered. 
+                            // Let's use a seeded random based on ICAO for consistent "position" on the scope
+                            // unless they are actually moving significantly (which they are).
+
+                            // BETTER APPROACH: Use data if available, else fallback.
+                            // We want movement.
+                            // Let's try to normalize their coordinates relative to a fixed point (e.g. Middle East or US)
+                            // OR, just map them purely on their lat/lon modulus for screen fit.
+
+                            const x = (state.longitude % 10) * 5; // Arbitrary scale
+                            const y = (state.latitude % 10) * 5;
+
+                            return {
+                                id: state.icao24,
+                                icao24: state.icao24,
+                                callsign: state.callsign,
+                                lastContact: state.last_contact,
+                                x: x || (Math.random() * 60 - 30),
+                                y: y || (Math.random() * 60 - 30),
+                            };
+                        });
+                    setBlips(newBlips);
+                }
+            } catch (error) {
+                console.error("Radar update failed", error);
             }
-        }, 2000);
+        };
+
+        fetchData();
+        const interval = setInterval(fetchData, 15000); // 15s refresh
         return () => clearInterval(interval);
     }, []);
 
     return (
-        <div className="relative aspect-square w-full max-w-2xl mx-auto tactical-clip border border-tactical-teal/20 bg-black/40 p-4 overflow-hidden">
-            {/* Grid Background */}
-            <div className="absolute inset-0 z-0 bg-[linear-gradient(rgba(90,125,154,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(90,125,154,0.1)_1px,transparent_1px)] bg-[size:40px_40px]" />
+        <div className="relative aspect-square w-full max-w-lg mx-auto tactical-clip border border-white/5 bg-matte-black p-4 overflow-hidden">
 
-            {/* Radar Main Rings */}
-            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="h-[80%] w-[80%] rounded-full border border-tactical-teal/30 opacity-50" />
-                <div className="absolute h-[60%] w-[60%] rounded-full border border-tactical-teal/30 opacity-40" />
-                <div className="absolute h-[40%] w-[40%] rounded-full border border-tactical-teal/30 opacity-30" />
+            {/* Center Info */}
+            <div className="absolute inset-0 z-30 flex flex-col items-center justify-center pointer-events-none">
+                <div className="text-6xl font-bold tracking-tighter text-coyote-tan/90">{riskLevel}%</div>
+                <div className="text-[10px] tracking-[0.3em] text-coyote-tan/60 font-medium mt-1">RISK LEVEL</div>
+            </div>
+
+            {/* Radar Rings & Markers */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-40">
+                {/* Outer Ring */}
+                <div className="absolute h-[90%] w-[90%] rounded-full border border-coyote-tan/20" />
+                {/* Mid Ring */}
+                <div className="absolute h-[60%] w-[60%] rounded-full border border-coyote-tan/20" />
+                {/* Inner Ring */}
+                <div className="absolute h-[30%] w-[30%] rounded-full border border-coyote-tan/20" />
+
+                {/* Degree Markers */}
+                <span className="absolute top-2 text-[9px] text-coyote-tan/50 font-mono">0°</span>
+                <span className="absolute bottom-2 text-[9px] text-coyote-tan/50 font-mono">180°</span>
+                <span className="absolute left-2 text-[9px] text-coyote-tan/50 font-mono">270°</span>
+                <span className="absolute right-2 text-[9px] text-coyote-tan/50 font-mono">90°</span>
+
                 {/* Crosshairs */}
-                <div className="absolute h-[1px] w-full bg-tactical-teal/20" />
-                <div className="absolute h-full w-[1px] bg-tactical-teal/20" />
+                <div className="absolute h-[1px] w-full bg-white/5" />
+                <div className="absolute h-full w-[1px] bg-white/5" />
             </div>
 
             {/* Radar Sweep */}
@@ -83,38 +113,39 @@ export default function StrategicSonar() {
                 animate={{ rotate: 360 }}
                 transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
             >
-                <div className="h-1/2 w-full origin-bottom bg-[conic-gradient(from_0deg,transparent_60%,rgba(90,125,154,0.5)_100%)]" style={{ transformOrigin: "50% 100%" }} />
+                {/* Sharp teal line with trailing gradient */}
+                <div className="absolute left-1/2 top-1/2 h-1/2 w-[2px] -translate-x-1/2 origin-top bg-tactical-teal shadow-[0_0_10px_#5A7D9A]" style={{ transform: 'rotate(180deg)' }} />
+                <div className="absolute inset-0 rounded-full bg-[conic-gradient(transparent_270deg,rgba(90,125,154,0.3)_360deg)]" />
             </motion.div>
 
 
             {/* Blips */}
             <div className="absolute inset-0 flex items-center justify-center z-20">
                 {blips.map((blip) => (
-                    <div
+                    <motion.div
                         key={blip.id}
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
                         className="absolute flex flex-col items-center justify-center"
                         style={{
-                            transform: `translate(${blip.x * 10}px, ${blip.y * 10}px)`,
+                            transform: `translate(${blip.x * 2}px, ${blip.y * 2}px)`, // Scale factor for visibility
                         }}
                     >
-                        <motion.div
-                            initial={blip.id.startsWith("T-") ? { opacity: 1, scale: 1 } : { opacity: 1, scale: 0 }}
-                            animate={blip.id.startsWith("T-") ? { opacity: [1, 0.5, 1] } : { opacity: 0, scale: 1.5 }}
-                            transition={blip.id.startsWith("T-") ? { repeat: Infinity, duration: 2 } : { duration: 3 }}
-                            className={`h-2 w-2 rounded-full shadow-[0_0_8px_rgba(239,68,68,1)] ${blip.threat_level === 'HIGH' ? 'bg-red-500' : 'bg-emerald-400'}`}
-                        />
-                        {blip.id.startsWith("T-") && (
-                            <span className="mt-1 text-[8px] font-mono text-coyote-tan whitespace-nowrap">{blip.type}</span>
-                        )}
-                    </div>
+                        <div className="relative">
+                            <div className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] animate-ping absolute inset-0 opacity-75"></div>
+                            <div className="h-2 w-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,1)] relative z-10"></div>
+                        </div>
+                        <span className="mt-1 text-[8px] font-mono text-tactical-teal whitespace-nowrap">{blip.callsign || blip.icao24}</span>
+                    </motion.div>
                 ))}
             </div>
 
-            {/* HUD Info */}
-            <div className="absolute bottom-4 left-4 z-30">
-                <div className="text-xs font-mono text-tactical-teal">RADAR // ACTIVE</div>
-                <div className="text-[10px] font-mono text-coyote-tan">TARGETS: {blips.length}</div>
-            </div>
+            {/* Corner Decorators */}
+            <div className="absolute top-0 left-0 w-4 h-4 border-l border-t border-coyote-tan/50" />
+            <div className="absolute top-0 right-0 w-4 h-4 border-r border-t border-coyote-tan/50" />
+            <div className="absolute bottom-0 left-0 w-4 h-4 border-l border-b border-coyote-tan/50" />
+            <div className="absolute bottom-0 right-0 w-4 h-4 border-r border-b border-coyote-tan/50" />
+
         </div>
     );
 }

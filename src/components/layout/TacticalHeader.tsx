@@ -9,8 +9,17 @@ export default function TacticalHeader() {
     useEffect(() => {
         const updateTime = () => {
             const now = new Date();
-            setTime(now.toISOString().split("T")[1].split(".")[0] + "Z");
-            setDate(now.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase());
+            // Format time as HH:MM:SS ZULU
+            const hours = now.getUTCHours().toString().padStart(2, '0');
+            const minutes = now.getUTCMinutes().toString().padStart(2, '0');
+            const seconds = now.getUTCSeconds().toString().padStart(2, '0');
+            setTime(`${hours}:${minutes}:${seconds} ZULU`);
+
+            // Format date as DD MMM YYYY
+            const day = now.getUTCDate().toString().padStart(2, '0');
+            const month = now.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' }).toUpperCase();
+            const year = now.getUTCFullYear();
+            setDate(`${day} ${month} ${year}`);
         };
 
         updateTime();
@@ -19,22 +28,28 @@ export default function TacticalHeader() {
     }, []);
 
     return (
-        <header className="flex items-center justify-between border-b border-tactical-teal/30 bg-matte-black/90 p-4 font-mono text-sm tracking-widest backdrop-blur-sm sticky top-0 z-50">
-            <div className="flex items-center gap-4">
-                <h1 className="text-xl font-bold text-tactical-teal">TACTICAL // OVERWATCH</h1>
-                <div className="hidden h-4 w-px bg-tactical-teal/50 sm:block" />
-                <span className="hidden text-coyote-tan/80 sm:block">SYS.STATUS: NOMINAL</span>
+        <header className="flex h-20 items-center justify-between border-b border-white/10 bg-matte-black px-6 font-mono text-xs tracking-wider sticky top-0 z-50">
+            {/* Left Side: Branding */}
+            <div className="flex flex-col">
+                <div className="flex items-center gap-3">
+                    <h1 className="text-2xl font-bold italic tracking-tighter text-gray-100 font-sans">TACTICAL</h1>
+                </div>
+                <div className="mt-1 text-[10px] font-medium tracking-[0.2em] text-gray-500 uppercase">
+                    Global Risk Monitoring & Strategic Intelligence
+                </div>
             </div>
 
-            <div className="flex items-center gap-6">
-                <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 animate-pulse rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.8)]" />
-                    <span className="font-bold text-red-500">LIVE</span>
-                </div>
+            {/* Right Side: Data/Time */}
+            <div className="flex items-center gap-6 text-coyote-tan">
 
-                <div className="text-right">
-                    <div className="text-coyote-tan">{date}</div>
-                    <div className="text-tactical-teal">{time}</div>
+                {/* Separator */}
+                <div className="h-8 w-px bg-white/10" />
+
+                <div className="flex items-center gap-3">
+                    <span className="text-lg tracking-widest">{date}</span>
+                    <div className="h-4 w-px bg-coyote-tan/30" />
+                    <span className="text-lg tracking-widest">{time}</span>
+                    <span className="h-2 w-2 animate-pulse rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]" />
                 </div>
             </div>
         </header>
