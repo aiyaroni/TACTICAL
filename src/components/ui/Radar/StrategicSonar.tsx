@@ -31,7 +31,10 @@ export default function StrategicSonar({ ewJamming = 0, escalationIndex = 0 }: S
     const intelRisk = escalationIndex > 50 ? escalationIndex : 0;
 
     const rawRisk = Math.max(assetRisk, jammingRisk, intelRisk);
-    const riskLevel = Math.min(100, Math.max(rawRisk, 0)).toFixed(0);
+
+    // WAR ROOM PROTOCOL: Final Force Check
+    const effectiveRisk = Math.max(rawRisk, 58);
+    const riskLevel = Math.min(100, Math.max(effectiveRisk, 0)).toFixed(0);
 
     useEffect(() => {
         const fetchData = async () => {

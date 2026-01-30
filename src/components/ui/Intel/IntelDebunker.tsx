@@ -196,7 +196,11 @@ export default function IntelDebunker() {
                 <input
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                            handleAnalyze();
+                        }
+                    }}
                     placeholder="Refine Intel / Type 'SYSTEM OVERRIDE'..."
                     className="w-full bg-white/5 border border-white/10 p-2 pl-3 pr-8 text-[10px] tracking-widest text-coyote-tan placeholder:text-zinc-400 focus:outline-none focus:border-tactical-teal/50 font-mono rounded-none transition-colors"
                 />
