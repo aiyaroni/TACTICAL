@@ -76,8 +76,8 @@ export default function IntelDebunker() {
     return (
         <MetricCard title="INTEL & NEWS" className="h-full flex flex-col p-4 !pb-2">
 
-            {/* Scrollable Feed Container - Strict Height Enforcement */}
-            <div className="flex-1 max-h-[400px] overflow-y-auto space-y-3 mb-3 pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-tactical-teal/20 hover:scrollbar-thumb-tactical-teal/40">
+            {/* Scrollable Feed Container - Fluid Height */}
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 mb-3 pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-tactical-teal/20 hover:scrollbar-thumb-tactical-teal/40">
                 {feed.map((item) => (
                     <div key={item.id} className="border-l-2 border-white/10 pl-3 py-1">
                         <div className="flex items-center justify-between mb-1">

@@ -32,6 +32,7 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
 
     const headers = new Headers();
     headers.set('Authorization', 'Basic ' + Buffer.from(username + ':' + password).toString('base64'));
+    headers.set('User-Agent', 'TacticalDashboard/1.0 (contact: your@email.com)'); // OpenSky requires a User-Agent
 
     // Build query params
     const params = new URLSearchParams();

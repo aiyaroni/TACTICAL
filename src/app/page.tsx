@@ -92,7 +92,7 @@ export default function Home() {
 
           {/* CENTER COLUMN (Cols 4-9): STRATEGIC SONAR */}
           <div className="lg:col-span-6 flex flex-col items-center justify-center relative">
-            <div className="absolute top-6 left-0 w-full flex items-center justify-between px-10 z-20 pointer-events-none">
+            <div className="absolute top-2 left-0 w-full flex items-center justify-between px-10 z-30 pointer-events-none">
               <h2 className="text-xs tracking-[0.4em] font-bold text-tactical-teal uppercase opacity-80 backdrop-blur-md">
                 Live Feed // Sector 7
               </h2>
