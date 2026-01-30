@@ -26,7 +26,8 @@ export default function StrategicSonar({ ewJamming = 0, escalationIndex = 0 }: S
     // 3. Escalation Index (Direct mapping if > 50%)
 
     const assetRisk = blips.length * 10;
-    const jammingRisk = ewJamming > 20 ? Math.max(58, ewJamming) : 0;
+    // WAR ROOM PROTOCOL: Enforce 58% Minimum Risk Floor
+    const jammingRisk = Math.max(58, ewJamming);
     const intelRisk = escalationIndex > 50 ? escalationIndex : 0;
 
     const rawRisk = Math.max(assetRisk, jammingRisk, intelRisk);
