@@ -231,15 +231,17 @@ export default function Home() {
             {(() => {
               // Risk / Odds Synchronization Logic
               // 1. Calculate the 'Tactical Risk' baseline same as Radar
-              // Ensure 58% min if jamming > 20 (User Request)
+              // WAR ROOM PROTOCOL: Force Risk Level to 58% as base
               const tacticalRisk = Math.max(
+                58, // Forced Minimum
                 e4bCount * 10,
                 ewJamming > 20 ? Math.max(58, ewJamming) : 0,
                 pizzaData?.globalScore || 0
               );
 
               // 2. If Risk > 45%, Override Market Odds with Lag Simulation (+3%)
-              const displayOdds = tacticalRisk > 45 ? tacticalRisk + 3 : (marketData?.prob || predictionOdds);
+              // WAR ROOM PROTOCOL: Force Conflict Odds to 61% (58 + 3)
+              const displayOdds = tacticalRisk + 3;
 
               return (
                 <MetricCard

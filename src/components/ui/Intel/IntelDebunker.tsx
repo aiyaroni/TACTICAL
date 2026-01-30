@@ -16,6 +16,13 @@ type FeedItem = {
 
 const INITIAL_DATA: FeedItem[] = [
     {
+        id: 103, // New ID
+        text: "Signal anomaly detected over Isfahan nuclear facility. Possible electronic countermeasures.",
+        status: "CONFIRMED",
+        summary: "Multiple SIGINT sources corroborate signal jamming pattern in Sector 7.",
+        timestamp: "05:42Z"
+    },
+    {
         id: 102,
         text: "Massive GPS interference reported in Northern Israel and Lebanon border.",
         status: "VERIFIED",
