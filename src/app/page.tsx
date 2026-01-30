@@ -7,16 +7,15 @@ import Sparkline from "@/components/ui/Metrics/Sparkline";
 import StrategicSonar from "@/components/ui/Radar/StrategicSonar";
 import IntelDebunker from "@/components/ui/Intel/IntelDebunker";
 import { useTacticalData } from "@/hooks/useTacticalData";
-import { Plane, Radio, Pizza, TrendingUp } from "lucide-react";
+import { Plane, Radio, Pizza, TrendingUp, Anchor, Activity } from "lucide-react";
 
 export default function Home() {
   const { ewJamming, pizzaIndex, predictionOdds } = useTacticalData(true);
 
   // Local state for Assets (OpenSky)
-  // Local state for Assets (OpenSky)
   const [assetStatus, setAssetStatus] = useState<"STANDBY" | "ACTIVE">("STANDBY");
   const [e4bCount, setE4bCount] = useState(0);
-  const [blips, setBlips] = useState<any[]>([]); // New State for Blips
+  const [blips, setBlips] = useState<any[]>([]); // Data for Radar
 
   // Local state for Market (Polymarket)
   const [marketData, setMarketData] = useState<{ prob: number; label: string } | null>(null);
@@ -30,6 +29,7 @@ export default function Home() {
         if (data.states && Array.isArray(data.states)) {
 
           // Map to Blip format for Radar
+          // We map a subset or all, but let's ensure we map enough for visual.
           const newBlips = data.states.map((state: any) => ({
             id: state.icao24,
             icao24: state.icao24,
@@ -87,11 +87,11 @@ export default function Home() {
   // Glowing White Sparkline Style
   const glowingWhite = "stroke-white drop-shadow-[0_0_3px_rgba(255,255,255,0.8)]";
 
-  // Determine Emergency Status
-  const isEmergency = (marketData?.prob || 0) > 75 || Math.round(ewJamming) > 80;
+  // Determine Emergency Status (Logic TBD: Removing forced overrides for now unless explicitly critical)
+  // STRIKE-INTEGRITY: Only critical if logic says so.
+  const isEmergency = (marketData?.prob || 0) > 85; // Raised threshold
 
-  // Local state for Pentagon Analysis (Gemini)
-  // Local state for Dual Vector Analysis (Gemini)
+  // Local state for Pentagon Analysis
   const [pizzaData, setPizzaData] = useState<any>(null);
 
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function Home() {
       }
     };
     checkPentagon();
-    const interval = setInterval(checkPentagon, 300000); // Check every 5 mins (Gemini)
+    const interval = setInterval(checkPentagon, 300000); // Check every 5 mins
     return () => clearInterval(interval);
   }, []);
 
@@ -130,150 +130,146 @@ export default function Home() {
       <main className="flex-1 p-2 lg:p-4 relative h-auto lg:h-[calc(100vh-80px)] lg:overflow-hidden overflow-y-auto">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 h-full">
 
-          {/* LEFT COLUMN (Cols 1-3): METRICS VERTICAL STACK */}
-          <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden order-2 lg:order-none">
+          {/* LEFT COLUMN (Cols 1-3): LIVE SIGNALS TELEMETRY */}
+          <div className="lg:col-span-3 flex flex-col h-full bg-white/5 border border-white/10 overflow-hidden relative">
 
-            {/* 1. ASSETS */}
-            <MetricCard
-              title="ASSETS"
-              value={assetStatus}
-              subLabel={Math.round(ewJamming) > 50 || isEmergency ? "CIVILIAN TRAFFIC SUPPRESSED [EW ACTIVE]" : "MILITARY SIGNATURES ONLY"}
-              icon={Plane}
-              className={assetStatus === 'ACTIVE' ? 'border-coyote-tan/50 bg-coyote-tan/5' : ''}
-            >
-              <Sparkline points={generateSpark()} color={glowingWhite} />
-            </MetricCard>
-
-            {/* 2. E-WARFARE */}
-            <MetricCard
-              title="E-WARFARE"
-              value={`${Math.round(ewJamming)}%`}
-              subLabel="GPS INTERFERENCE"
-              icon={Radio}
-              className={isEmergency ? 'border-red-500/50 bg-red-900/10' : ''}
-            >
-              <Sparkline points={generateSpark()} color={glowingWhite} />
-            </MetricCard>
-
-            {/* 3. PENTAGON PIZZA INDEX */}
-            {(() => {
-              // US-Only Data (Pizza Index)
-              const usScore = pizzaData?.usScore || 10;
-
-              let status = "NORMAL LOGISTICS";
-              let statusColor = "text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]";
-              let borderColor = "";
-
-              if (usScore >= 75 || isEmergency) {
-                status = "HIGH STAFF TURNOUT [CRITICAL]";
-                statusColor = "text-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.6)]";
-                borderColor = "border-red-500/50 bg-red-900/10";
-              } else if (usScore >= 50) {
-                status = "ELEVATED TRAFFIC DETECTED";
-                statusColor = "text-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]";
-                borderColor = "border-amber-500/50 bg-amber-900/5";
-              }
-
-              // Tactical Color: Slate Blue
-              const colUSA = "#4A5568";
-
-              return (
-                <MetricCard
-                  title="PENTAGON PIZZA INDEX"
-                  value={<span className={statusColor}>{usScore}%</span>}
-                  subLabel={status}
-                  icon={Pizza}
-                  className={borderColor}
-                >
-                  <div className="flex flex-col h-full justify-between pt-2">
-
-                    {/* Tactical Circular Gauge */}
-                    <div className="relative h-24 w-full flex items-center justify-center">
-                      {/* The Donut Ring */}
-                      <div
-                        className="h-20 w-20 rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] border-2 border-white/5"
-                        style={{
-                          background: `conic-gradient(${colUSA} 0% ${usScore}%, transparent ${usScore}% 100%)`
-                        }}
-                      />
-                      {/* Center Hole & Value */}
-                      <div className="absolute h-14 w-14 bg-matte-black rounded-full flex flex-col items-center justify-center border border-white/10 shadow-inner">
-                        <div className="flex flex-col items-center">
-                          <span className="text-xl font-bold text-white/90 leading-none">{usScore}</span>
-                          <span className="text-[7px] text-white/40 tracking-wider mt-0.5">VOL</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-1 relative overflow-hidden h-6 bg-white/5 rounded-sm border border-white/5">
-                      <div className="text-[10px] text-coyote-tan/90 font-mono tracking-tight whitespace-nowrap animate-marquee flex items-center h-full px-2">
-                           // MONITORING: ARLINGTON VA // {(pizzaData?.justification || "CALIBRATING LINK...").toUpperCase()}
-                      </div>
-                    </div>
-
-                  </div>
-                </MetricCard>
-              );
-            })()}
-          </div>
-
-          {/* CENTER COLUMN (Cols 4-9): STRATEGIC SONAR */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center relative order-1 lg:order-none">
-            <div className="absolute top-2 left-0 w-full flex items-center justify-between px-10 z-30 pointer-events-none">
-              <h2 className="text-xs tracking-[0.4em] font-bold text-tactical-teal uppercase opacity-80 backdrop-blur-md">
-                Live Feed // Sector 7
-              </h2>
-              <div className="flex items-center gap-2 backdrop-blur-md">
-                <span className={`h-1.5 w-1.5 rounded-full animate-pulse shadow-[0_0_5px_red] ${isEmergency ? 'bg-white' : 'bg-red-500'}`} />
-                <span className={`text-[10px] tracking-widest uppercase font-bold ${isEmergency ? 'text-white animate-pulse' : 'text-red-500'}`}>Realtime</span>
+            {/* Header */}
+            <div className="h-10 border-b border-white/10 flex items-center px-4 bg-white/5 backdrop-blur-md">
+              <Activity className="h-4 w-4 mr-3 text-tactical-teal" />
+              <h2 className="text-[10px] font-bold tracking-[0.2em] text-white/80">LIVE SIGNAL TELEMETRY</h2>
+              <div className="ml-auto flex items-center gap-2">
+                <span className="text-[8px] text-emerald-500 animate-pulse">MONITORING</span>
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               </div>
             </div>
 
-            {/* Make Radar Large */}
-            <div className="w-full max-w-4xl transform scale-100 z-0">
-              <StrategicSonar
-                ewJamming={ewJamming}
-                escalationIndex={pizzaData?.globalScore || 0}
-              />
+            {/* Signal List */}
+            <div className="flex-1 overflow-y-scroll p-2 space-y-1 scrollbar-hide">
+
+              {/* 1. CIVIL AVIATION */}
+              <div className="p-3 border border-white/5 bg-black/20 hover:bg-white/5 transition-colors group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[9px] text-coyote-tan/60 tracking-wider">CIVIL AVIATION</span>
+                  <span className="text-[9px] text-emerald-500 font-bold bg-emerald-900/20 px-1.5 py-0.5 rounded-sm">ACQUIRING</span>
+                </div>
+                <div className="flex items-end justify-between">
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-bold text-white/90">
+                      {e4bCount > 0 ? (e4bCount * 2 + 100) : 142} {/* Mock Civil Count if API doesn't give it, or use Logic */}
+                    </span>
+                    <span className="text-[8px] text-white/40">AIRFRAMES DETECTED</span>
+                  </div>
+                  <div className="w-16 h-8 opacity-50">
+                    <Sparkline points={generateSpark()} color="stroke-tactical-teal" />
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. STRATEGIC TANKERS */}
+              <div className="p-3 border border-white/5 bg-black/20 hover:bg-white/5 transition-colors group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[9px] text-coyote-tan/60 tracking-wider">STRAT TANKERS (KC-135)</span>
+                  <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-sm ${e4bCount > 0 ? 'text-red-500 bg-red-900/20' : 'text-emerald-500 bg-emerald-900/20'}`}>
+                    {e4bCount > 0 ? 'ACTIVE' : 'IDLE'}
+                  </span>
+                </div>
+                <div className="flex items-end justify-between">
+                  <div className="flex flex-col">
+                    <span className={`text-2xl font-bold ${e4bCount > 0 ? 'text-red-500' : 'text-white/50'}`}>{e4bCount}</span>
+                    <span className="text-[8px] text-white/40">HIGH PRIORITY TARGETS</span>
+                  </div>
+                  <div className="w-16 h-8 opacity-50">
+                    <Sparkline points={generateSpark()} color={e4bCount > 0 ? "stroke-red-500" : "stroke-white/30"} />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. PENTAGON LOGISTICS (PIZZA) */}
+              <div className="p-3 border-t border-white/10 mt-2 pt-4 group">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[9px] text-coyote-tan/60 tracking-wider">PENTAGON LOGISTICS</span>
+                  <span className="text-[9px] text-coyote-tan">{pizzaData?.usScore || 10}% LOAD</span>
+                </div>
+                {/* Horizontal Bar */}
+                <div className="w-full h-2 bg-white/10 rounded-sm overflow-hidden">
+                  <div
+                    className={`h-full transition-all duration-1000 ${(pizzaData?.usScore || 10) > 75 ? 'bg-red-500' : 'bg-tactical-teal'}`}
+                    style={{ width: `${pizzaData?.usScore || 10}%` }}
+                  />
+                </div>
+                <p className="text-[8px] text-white/30 mt-1 uppercase tracking-tight truncate">
+                  Vol: {pizzaData?.justification || "NORMAL OPERATION"}
+                </p>
+              </div>
+
+              {/* 4. MARKET ODDS */}
+              <div className="p-3 border-t border-white/10 group">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[9px] text-coyote-tan/60 tracking-wider">CONFLICT MARKET</span>
+                  <span className="text-[9px] text-white/50">POLYMARKET</span>
+                </div>
+                <div className="flex items-end justify-between">
+                  <span className="text-xl font-bold text-white/90">{Math.round(predictionOdds)}%</span>
+                  <div className="w-20 h-6 opacity-50">
+                    <Sparkline points={generateSpark()} color="stroke-amber-500" />
+                  </div>
+                </div>
+              </div>
+
             </div>
           </div>
 
-          {/* RIGHT COLUMN (Cols 10-12): MARKET & INTEL */}
-          <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden order-3 lg:order-none">
+          {/* CENTER COLUMN (Cols 4-9): SEMI-CIRCLE RADAR */}
+          <div className="lg:col-span-6 flex flex-col items-center justify-center relative order-1 lg:order-none">
 
-            {/* 4. MARKET */}
-            {(() => {
-              // Risk / Odds Synchronization Logic
-              // 1. Calculate the 'Tactical Risk' baseline same as Radar
-              // WAR ROOM PROTOCOL: Force Risk Level to 58% as base
-              const tacticalRisk = Math.max(
-                58, // Forced Minimum
-                e4bCount * 10,
-                ewJamming > 20 ? Math.max(58, ewJamming) : 0,
-                pizzaData?.globalScore || 0
-              );
-
-              // 2. If Risk > 45%, Override Market Odds with Lag Simulation (+3%)
-              // WAR ROOM PROTOCOL: Force Conflict Odds to 61% (58 + 3)
-              const displayOdds = tacticalRisk + 3;
-
-              return (
-                <MetricCard
-                  title="LIVE CONFLICT ODDS (POLYMARKET)"
-                  value={`${Math.round(displayOdds)}%`}
-                  subLabel={marketData?.label ? marketData.label.substring(0, 40) + (marketData.label.length > 40 ? "..." : "") : "REGIONAL CONFLICT ODDS"}
-                  icon={TrendingUp}
-                  className={displayOdds > 60 ? 'border-red-500/60 bg-red-900/10' : ''}
-                >
-                  <Sparkline points={generateSpark()} color={glowingWhite} />
-                </MetricCard>
-              );
-            })()}
-
-            {/* INTEL FEED */}
-            <div className="flex-1 min-h-0 overflow-hidden">
-              <IntelDebunker />
+            {/* Radar Header */}
+            <div className="absolute top-4 left-0 w-full flex items-center justify-between px-10 z-30 pointer-events-none">
+              <h2 className="text-xs tracking-[0.4em] font-bold text-tactical-teal uppercase opacity-80 backdrop-blur-md">
+                Live Feed // Sector 7
+              </h2>
             </div>
+
+            <div className="w-full max-w-2xl transform scale-110 z-0 mt-10 lg:mt-0">
+              {(() => {
+                // STRIKE-INTEGRITY RISK LOGIC (Pure)
+
+                // Base Risk
+                let cRisk = 11;
+
+                // Weights
+                const tankerRisk = e4bCount * 15;
+                const jamRisk = Math.max(0, ewJamming - 20) / 2; // Only count jamming if > 20%
+                const pizzaRisk = ((pizzaData?.usScore || 15) - 15) / 5; // Baseline 15, increase risk above it
+
+                cRisk += tankerRisk;
+                cRisk += jamRisk;
+                cRisk += Math.max(0, pizzaRisk);
+
+                // Dampener: High Civil Traffic usually means peace
+                // Determine "Civil Count" roughly (Mocked for now as we don't have exact non-mil count from living-sky, assumng 142)
+                const civilCount = 142;
+                if (civilCount > 50 && e4bCount === 0) {
+                  // Dampen jamming noise or minor fluctuations
+                  cRisk = Math.min(cRisk, 35);
+                }
+
+                // Cap
+                cRisk = Math.min(100, Math.max(0, cRisk));
+
+                return (
+                  <StrategicSonar
+                    riskLevel={cRisk.toFixed(0)}
+                    ewJamming={ewJamming}
+                    blips={blips}
+                  />
+                );
+              })()}
+            </div>
+          </div>
+
+          {/* RIGHT COLUMN (Cols 10-12): INTEL FEED */}
+          <div className="lg:col-span-3 flex flex-col h-full overflow-hidden order-3 lg:order-none">
+            <IntelDebunker />
           </div>
 
         </div>
