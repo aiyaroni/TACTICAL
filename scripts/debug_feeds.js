@@ -3,8 +3,8 @@ const https = require('https');
 // --- OPENSKY CONFIG ---
 const CLIENT_ID = 'booldeals-api-client';
 const CLIENT_SECRET = '13579Bool1';
-// Corrected Realm: 'opensky-network' instead of 'master'
-const AUTH_URL = 'https://auth.opensky-network.org/realms/opensky-network/protocol/openid-connect/token';
+// Corrected Realm Path: Keycloak often uses /auth/realms/...
+const AUTH_URL = 'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token';
 const API_URL = 'https://opensky-network.org/api/states/all';
 
 // --- POLYMARKET CONFIG ---
@@ -30,12 +30,13 @@ async function testOpenSky() {
         });
 
         console.log(`Auth Status: ${authRes.status} ${authRes.statusText}`);
-        const authBody = await authRes.text();
-        console.log(`Auth Body: ${authBody}`);
+        if (!authRes.ok) {
+            console.log(await authRes.text());
+            return;
+        }
 
-        if (!authRes.ok) return;
-
-        const token = JSON.parse(authBody).access_token;
+        const authBody = await authRes.json();
+        const token = authBody.access_token;
         console.log('Token Acquired (Truncated):', token.substring(0, 20) + '...');
 
         // 2. Data Request
@@ -54,9 +55,9 @@ async function testOpenSky() {
 
         if (dataJson.states) {
             console.log(`SUCCESS: Found ${dataJson.states.length} states.`);
+            // console.log('Sample:', dataJson.states[0]);
         } else {
             console.log('SUCCESS: Valid response but no states found (or format differs).');
-            console.log(JSON.stringify(dataJson).substring(0, 200));
         }
 
     } catch (e) {
@@ -67,12 +68,12 @@ async function testOpenSky() {
 async function testPolymarket() {
     console.log('\n--- TESTING POLYMARKET ---');
 
-    // Test 'tag_slug' without sort orders
+    // Test 'q' (Query) instead of tag
     const params = new URLSearchParams({
         limit: "5",
         active: "true",
         closed: "false",
-        tag_slug: "middle-east"
+        q: "Middle East"
     });
 
     const url = `${GAMMA_API}?${params.toString()}`;

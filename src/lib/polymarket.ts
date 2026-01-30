@@ -10,71 +10,45 @@ const GAMMA_API_URL = "https://gamma-api.polymarket.com/markets";
 
 export async function fetchConflictOdds(): Promise<MarketData | null> {
     try {
-        // Query for active markets with relevant tags.
-        // REMOVED 'sort' and 'order' as they caused 422 errors.
-        // Using simple 'q' parameter which is more robust.
+        // Hardcoded Targeted Market: "Will Israel and Iran be at war by 2026?"
+        // We use the slug filter which is very precise.
         const params = new URLSearchParams({
-            limit: "10",
-            active: "true",
-            closed: "false",
-            q: "Middle East" // Primary search
+            slug: "will-israel-and-iran-be-at-war-by-2026"
         });
 
-        // First attempt: Middle East
-        let res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } }); // 10m cache
-        let data = await res.json();
+        const res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
+        const data = await res.json();
 
-        // If no results, try 'War'
-        if (!data || !Array.isArray(data) || data.length === 0) {
-            params.set("q", "War"); // Search for "War" generally
-            res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
-            data = await res.json();
-        }
-
-        // Third attempt: "Israel"
-        if (!data || !Array.isArray(data) || data.length === 0) {
-            params.set("q", "Israel");
-            res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
-            data = await res.json();
-        }
-
-        // Check again
         if (!data || !Array.isArray(data) || data.length === 0) return null;
 
-        // Iterate to find a binary YES/NO market
-        for (const market of data) {
-            // Check if it has outcomes
-            if (market.outcomes && market.outcomePrices) {
-                // Try to interpret "Yes". Usually JSON string `["Yes", "No"]`
-                let outcomes: string[] = [];
-                let prices: string[] = [];
+        const market = data[0]; // Specific slug returns array of 1 (usually)
 
-                try {
-                    outcomes = JSON.parse(market.outcomes);
-                    prices = JSON.parse(market.outcomePrices);
-                } catch (e) {
-                    // Sometimes they are already arrays? API varies.
-                    if (Array.isArray(market.outcomes)) outcomes = market.outcomes;
-                    if (Array.isArray(market.outcomePrices)) prices = market.outcomePrices;
-                }
+        // Iterate to finding a binary YES/NO market if needed, but Slug usually targets one event.
+        if (market.outcomes && market.outcomePrices) {
+            let outcomes: string[] = [];
+            let prices: string[] = [];
 
-                const yesIndex = outcomes.findIndex((o: string) => o.toLowerCase() === "yes");
+            try {
+                outcomes = JSON.parse(market.outcomes);
+                prices = JSON.parse(market.outcomePrices);
+            } catch (e) {
+                if (Array.isArray(market.outcomes)) outcomes = market.outcomes;
+                if (Array.isArray(market.outcomePrices)) prices = market.outcomePrices;
+            }
 
-                if (yesIndex !== -1 && prices[yesIndex]) {
-                    const prob = parseFloat(prices[yesIndex]);
+            const yesIndex = outcomes.findIndex((o: string) => o.toLowerCase() === "yes");
 
-                    return {
-                        question: market.question,
-                        probability: prob * 100, // Client will round this
-                        volume: market.volume,
-                        url: `https://polymarket.com/event/${market.slug || market.groupItemTitle || "unknown"}`,
-                        // Sparkline: requires a separate /history call usually. 
-                        // We will omit for now to stay fast, client uses random sparkline.
-                    };
-                }
+            if (yesIndex !== -1 && prices[yesIndex]) {
+                const prob = parseFloat(prices[yesIndex]);
+
+                return {
+                    question: market.question,
+                    probability: prob * 100, // Client will round this
+                    volume: market.volume,
+                    url: `https://polymarket.com/event/${market.slug || "unknown"}`,
+                };
             }
         }
-
         return null;
 
     } catch (error) {
