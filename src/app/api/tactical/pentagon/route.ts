@@ -1,9 +1,10 @@
 import { NextResponse } from 'next/server';
-import { analyzeDualVectorEscalation } from '@/lib/gemini';
+import { getPizzaOccupancy } from '@/lib/pizza';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    const analysis = await analyzeDualVectorEscalation();
-    return NextResponse.json(analysis);
+    // Low-Cost Scraper Implementation (Cheerio)
+    const data = await getPizzaOccupancy();
+    return NextResponse.json(data);
 }
