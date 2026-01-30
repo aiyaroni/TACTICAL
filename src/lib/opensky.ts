@@ -18,31 +18,34 @@ export interface OpenSkyState {
     position_source: number;
 }
 
-// Correct Auth URL with /auth/ prefix
-const OPENSKY_API_URL = 'https://opensky-network.org/api/states/all';
-const AUTH_URL = 'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token';
+// TACTICAL SIMULATION CONFIG
+// USER_REQUEST: "Switch the Aviation component to MOCK MODE. Hardcode 54 Civil and 12 Logistics."
+const SIM_CONFIG = {
+    civilCount: 54,
+    milCount: 12
+};
 
-// --- EMERGENCY FALLBACK SIMULATION ---
-// Generates 54 fake aircraft in the Levant BBOX (Lat 28-36, Lon 32-40)
-// To ensure UI "looks operational" during API outages / Intel Events.
+const MILITARY_ICAOS = ['adfeb3', 'adfeb4', 'adfeb5', 'adfeb6', 'ae01d2', 'ae04d7', '154078', '738011', '738012', '738031'];
+
 function generateMockTraffic(): OpenSkyState[] {
-    console.warn("[OPENSKY] API FAILURE. ENGAGING ACTIVE SIMULATION MODE (54 TARGETS).");
+    console.warn("[OPENSKY] TACTICAL SIMULATION MODE ACTIVE.");
     const mockStates: OpenSkyState[] = [];
     const timestamp = Math.floor(Date.now() / 1000);
 
-    for (let i = 0; i < 54; i++) {
+    // 1. Generate Civil Traffic (Green Dots)
+    for (let i = 0; i < SIM_CONFIG.civilCount; i++) {
         mockStates.push({
-            icao24: `sim${i.toString(16).padStart(4, '0')}`,
-            callsign: `SIM${100 + i}`,
-            origin_country: "Simulated Territory",
+            icao24: `sim_civ_${i.toString(16)}`,
+            callsign: `CIV${100 + i}`,
+            origin_country: "Simulated Civil",
             time_position: timestamp,
             last_contact: timestamp,
             // Random distribution within Lat 29-35, Lon 33-39 (Israel/Levant Core)
             latitude: 29 + Math.random() * 6,
             longitude: 33 + Math.random() * 6,
-            baro_altitude: 1000 + Math.random() * 10000,
+            baro_altitude: 5000 + Math.random() * 30000,
             on_ground: false,
-            velocity: 200 + Math.random() * 100,
+            velocity: 250 + Math.random() * 200,
             true_track: Math.random() * 360,
             vertical_rate: 0,
             sensors: null,
@@ -52,117 +55,42 @@ function generateMockTraffic(): OpenSkyState[] {
             position_source: 0
         });
     }
+
+    // 2. Generate Military/Logistics Traffic (Red/Amber)
+    // We reuse known Military ICAOs to trigger the "Military" type in frontend logic if possible, 
+    // or just use the count logic which relies on ICAO matching in page.tsx 
+    // (page.tsx uses `MILITARY_ICAOS` list locally to filter).
+    // So we MUST use real Military ICAOs for the first few to be counted as E4B/Tankers.
+
+    for (let i = 0; i < SIM_CONFIG.milCount; i++) {
+        // Cycle through known IDs to ensure they are flagged as Military
+        const realId = MILITARY_ICAOS[i % MILITARY_ICAOS.length];
+        mockStates.push({
+            icao24: realId, // This triggers the "Red Jet" logic in page.tsx
+            callsign: `MIL${i}`,
+            origin_country: "USA",
+            time_position: timestamp,
+            last_contact: timestamp,
+            latitude: 30 + Math.random() * 4,
+            longitude: 34 + Math.random() * 4,
+            baro_altitude: 20000 + Math.random() * 15000,
+            on_ground: false,
+            velocity: 400 + Math.random() * 100,
+            true_track: Math.random() * 360,
+            vertical_rate: 0,
+            sensors: null,
+            geo_altitude: null,
+            squawk: null,
+            spi: false,
+            position_source: 0
+        });
+    }
+
     return mockStates;
 }
 
-async function getAccessToken(clientId: string, clientSecret: string): Promise<string | null> {
-    try {
-        const params = new URLSearchParams();
-        params.append('grant_type', 'client_credentials');
-        params.append('client_id', clientId);
-        params.append('client_secret', clientSecret);
-
-        const res = await fetch(AUTH_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: params,
-            cache: 'no-store'
-        });
-
-        if (!res.ok) {
-            console.error('OpenSky Auth Failed:', await res.text());
-            return null;
-        }
-
-        const data = await res.json();
-        return data.access_token;
-    } catch (e) {
-        console.error('Auth Request Error:', e);
-        return null;
-    }
-}
-
 export async function fetchTacticalData(): Promise<OpenSkyState[]> {
-    const clientId = process.env.OPENSKY_CLIENT_ID?.replace(/"/g, '');
-    const clientSecret = process.env.OPENSKY_CLIENT_SECRET?.replace(/"/g, '');
-
-    // Fallback immediately if credentials missing
-    if (!clientId || !clientSecret) {
-        console.warn('OpenSky credentials missing. Using Mock Data.');
-        return generateMockTraffic();
-    }
-
-    // 1. Get OAuth Token
-    const token = await getAccessToken(clientId, clientSecret);
-    if (!token) {
-        console.error('Failed to obtain OpenSky Bearer Token. Using Mock Data.');
-        return generateMockTraffic();
-    }
-
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
-
-    // BBOX: Israel/Levant
-    const params = new URLSearchParams({
-        lamin: '28.0',
-        lomin: '32.0',
-        lamax: '36.0',
-        lomax: '40.0'
-    });
-
-    const fetchUrl = `${OPENSKY_API_URL}?${params.toString()}`;
-
-    try {
-        const response = await fetch(fetchUrl, {
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'User-Agent': 'TacticalDashboard/1.0',
-                'Accept': 'application/json'
-            },
-            next: { revalidate: 30 }, // 30s cache
-            signal: controller.signal
-        });
-        clearTimeout(timeoutId);
-
-        if (!response.ok) {
-            console.error(`OpenSky API error: ${response.status} ${response.statusText}`);
-            // Fallback on 429 (Rate Limit) or 500s
-            return generateMockTraffic();
-        }
-
-        const data = await response.json();
-
-        if (!data.states) {
-            // Valid response but empty? Could be empty sky, but user wants "No Zeros".
-            // Let's trust the API if it says empty, UNLESS the user explicitly said "No more 0s".
-            // "I want to see the dashboard ALIVE... No more 0s."
-            // Fine, if empty, we mock.
-            console.warn("OpenSky returned 0 states. Falling back to Simulation as requested.");
-            return generateMockTraffic();
-        }
-
-        return data.states.map((state: any[]) => ({
-            icao24: state[0],
-            callsign: state[1]?.trim() || null,
-            origin_country: state[2],
-            time_position: state[3],
-            last_contact: state[4],
-            longitude: state[5],
-            latitude: state[6],
-            baro_altitude: state[7],
-            on_ground: state[8],
-            velocity: state[9],
-            true_track: state[10],
-            vertical_rate: state[11],
-            sensors: state[12],
-            geo_altitude: state[13],
-            squawk: state[14],
-            spi: state[15],
-            position_source: state[16],
-        }));
-
-    } catch (error) {
-        console.error('Failed to fetch OpenSky data:', error);
-        return generateMockTraffic();
-    }
+    // FORCE SIMULATION MODE
+    // Ignoring API credentials and calls as per "MISSION FAILURE so far" command.
+    return generateMockTraffic();
 }
