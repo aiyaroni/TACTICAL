@@ -6,7 +6,7 @@ export interface NewsArticle {
     url: string;
 }
 
-const NEWS_API_KEY = process.env.NEWS_API_KEY;
+const NEWS_API_KEY = process.env.NEWS_API_KEY?.replace(/"/g, '');
 
 export async function fetchMilitaryNews(query = "military+geopolitics"): Promise<NewsArticle[]> {
     if (!NEWS_API_KEY) {

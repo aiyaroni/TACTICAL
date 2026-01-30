@@ -34,8 +34,8 @@ const TARGET_ICAOS = [
 ];
 
 export async function fetchTacticalData(): Promise<OpenSkyState[]> {
-    const username = process.env.OPENSKY_CLIENT_ID;
-    const password = process.env.OPENSKY_CLIENT_SECRET;
+    const username = process.env.OPENSKY_CLIENT_ID?.replace(/"/g, '');
+    const password = process.env.OPENSKY_CLIENT_SECRET?.replace(/"/g, '');
 
     if (!username || !password) {
         console.warn('OpenSky credentials (OPENSKY_CLIENT_ID/SECRET) missing. Returning Mock Data equivalent (empty).');

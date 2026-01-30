@@ -122,7 +122,7 @@ export default function Home() {
             <MetricCard
               title="ASSETS"
               value={assetStatus}
-              subLabel={`E-4B STATUS [${e4bCount} DETECTED]`}
+              subLabel="SENSOR INTERFERENCE ACTIVE"
               icon={Plane}
               className={assetStatus === 'ACTIVE' ? 'border-coyote-tan/50 bg-coyote-tan/5' : ''}
             >
