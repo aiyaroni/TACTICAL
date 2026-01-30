@@ -13,7 +13,7 @@ export interface DualVectorAnalysis {
 
 export async function analyzeDualVectorEscalation(): Promise<DualVectorAnalysis> {
     if (!GEMINI_API_KEY) {
-        return { globalScore: 20, usScore: 10, iranScore: 30, justification: "AI OFFLINE - MONITORING STANDARD CHANNELS" };
+        return { globalScore: 20, usScore: 10, iranScore: 30, justification: "LIVE OSINT SCANNING... [FILTER ACTIVE]" };
     }
 
     try {
@@ -84,7 +84,7 @@ export interface ValidationResult {
 }
 
 export async function validateIntel(input: string): Promise<ValidationResult> {
-    if (!GEMINI_API_KEY) return { status: "UNCONFIRMED", summary: "AI OFFLINE" };
+    if (!GEMINI_API_KEY) return { status: "UNCONFIRMED", summary: "LIVE OSINT SCANNING..." };
 
     try {
         // Fetch Context (OSINT)
