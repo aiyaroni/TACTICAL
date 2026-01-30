@@ -26,14 +26,25 @@ export async function fetchConflictOdds(): Promise<MarketData | null> {
         let data = await res.json();
 
         // If no results, try 'war'
-        params.set("tag_slug", "");
-        params.set("q", "War"); // Search for "War" generally
-        res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
-        data = await res.json();
+        if (!data || data.length === 0) {
+            params.set("tag_slug", "");
+            params.set("q", "War"); // Search for "War" generally
+            res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
+            data = await res.json();
+        }
 
         // Third attempt: "Conflict" maybe?
         if (!data || data.length === 0) {
             params.set("q", "Conflict");
+            res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
+            data = await res.json();
+        }
+
+        // Fallback: Try "Global Conflict" or "Politics" if War/Conflict fails, but prioritize a specific known market logic if possible.
+        // Using a broad "politics" search sorted by volume often yields the biggest conflict markets too.
+        if (!data || data.length === 0) {
+            params.set("tag_slug", "");
+            params.set("q", "Politics");
             res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
             data = await res.json();
         }

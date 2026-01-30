@@ -41,10 +41,11 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
     console.log(`[OpenSky] Fetching: ${fetchUrl}`);
 
     try {
+        console.log(`[OpenSky] Requesting: ${fetchUrl}`);
         const response = await fetch(fetchUrl, {
             headers: {
                 'Authorization': 'Basic ' + Buffer.from(username + ':' + password).toString('base64'),
-                'User-Agent': 'TacticalDashboard/1.0 (contact: tactical@example.com)',
+                'User-Agent': 'TacticalDashboard/1.0',
                 'Accept': 'application/json'
             },
             next: { revalidate: 15 },

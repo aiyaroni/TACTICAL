@@ -169,9 +169,9 @@ export default function Home() {
                   <div className="flex flex-col h-full justify-between">
                     <Sparkline points={generateSpark()} color={isEmergency ? 'stroke-red-500' : (pizzaStatus === 'ELEVATED' ? 'stroke-amber-500' : glowingWhite)} />
 
-                    <div className="mt-1 relative overflow-hidden h-4 bg-white/5 rounded-sm">
-                      <div className="text-[9px] text-coyote-tan/90 font-mono tracking-tight whitespace-nowrap animate-marquee flex items-center h-full">
-                           // INTELLIGENCE: {(pizzaData?.justification || "ANALYZING CLASSIFIED DATA STREAMS... STANDBY...").toUpperCase()}
+                    <div className="mt-2 relative overflow-hidden h-6 bg-white/5 rounded-sm border border-white/5">
+                      <div className="text-[10px] text-coyote-tan/90 font-mono tracking-tight whitespace-nowrap animate-marquee flex items-center h-full px-2">
+                           // INTELLIGENCE: {(pizzaData?.justification || "INITIALIZING TACTICAL DATA LINK... STANDBY...").toUpperCase()}
                       </div>
                     </div>
 
