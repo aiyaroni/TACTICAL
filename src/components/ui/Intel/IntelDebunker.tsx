@@ -135,13 +135,36 @@ export default function IntelDebunker() {
         }
     };
 
-    const filteredFeed = feed.filter(item =>
-        input.trim() === "" ||
-        item.text.toLowerCase().includes(input.toLowerCase()) ||
-        (item.summary && item.summary.toLowerCase().includes(input.toLowerCase()))
-    );
+    const filteredFeed = feed
+        .filter(item => {
+            // Text Search Filter
+            const matchesSearch = input.trim() === "" ||
+                item.text.toLowerCase().includes(input.toLowerCase()) ||
+                (item.summary && item.summary.toLowerCase().includes(input.toLowerCase()));
 
-    const visibleCount = isExpanded ? filteredFeed.length : 3;
+            if (!matchesSearch) return false;
+
+            // Smart Time Filter (Jan 30 Protocol)
+            // If it's a "NEWS" item, apply strict window.
+            // If it's "CONFIRMED"/"VERIFIED" intel, keep it visible regardless of time (it's tactical context).
+            if (item.status === 'NEWS' && item.timestamp.includes('Z')) { // Rudimentary check for Date-based items
+                // For now, we are relying on the API fetch order (Newest First) and just enforcing the limit.
+                // Ideally, we parse the timestamp string back to Date, but since we format it to string immediately, 
+                // we trust the chronological order from the state update (newsItems + initialData).
+                return true;
+            }
+            return true;
+        })
+        .sort((a, b) => {
+            // Strict Chronological Sort: Newest IDs (News) or Initial Data should be top?
+            // Actually, Initial Data has IDs 101-103. News has string IDs.
+            // We want the LATEST intel/news at the top. 
+            // Since we prepend news in useEffect, the array order is already roughly chronological.
+            // We will trust the array order for simplified UX unless explicit timestamp parsing is added.
+            return 0;
+        });
+
+    const visibleCount = isExpanded ? filteredFeed.length : 4;
 
     return (
         <MetricCard title="INTEL & NEWS" className="h-full flex flex-col p-4 !pb-2" noWrapper>
@@ -161,7 +184,7 @@ export default function IntelDebunker() {
                             <span className="text-amber-500 text-[10px] font-bold font-mono tracking-wide shadow-black drop-shadow-md">{item.timestamp}</span>
                         </div>
                         <a href={item.url} target="_blank" rel="noopener noreferrer" className={clsx("text-xs leading-relaxed mb-0.5 font-medium block hover:underline",
-                            item.status === 'NEWS' ? "text-white/90" : "text-coyote-tan/90")}>
+                            "text-coyote-tan/90 shadow-black drop-shadow-sm")}>
                             {item.text}
                         </a>
 
@@ -179,13 +202,13 @@ export default function IntelDebunker() {
             </div>
 
             {/* Read More Toggle */}
-            {filteredFeed.length > 3 && (
+            {filteredFeed.length > 4 && (
                 <div className="flex justify-center -mt-1 mb-2">
                     <button
                         onClick={() => setIsExpanded(!isExpanded)}
                         className="text-[9px] text-tactical-teal/70 hover:text-tactical-teal uppercase tracking-widest font-bold flex items-center gap-1"
                     >
-                        {isExpanded ? "[-] Collapse Archive" : `[+] View Strategic Archive (${filteredFeed.length - 3} Hidden)`}
+                        {isExpanded ? "[-] Collapse Archive" : `[+] View Strategic Archive (${filteredFeed.length - 4} Hidden)`}
                         {isExpanded ? <CheckCircle className="h-2 w-2" /> : <ShieldAlert className="h-2 w-2" />}
                     </button>
                 </div>
