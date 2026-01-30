@@ -20,7 +20,21 @@ interface StrategicSonarProps {
 
 export default function StrategicSonar({ blips, riskLevel, ewJamming }: StrategicSonarProps) {
     const riskNum = parseInt(riskLevel);
-    const isElevated = riskNum > 50;
+
+    // Determine Risk Tier for Main Display
+    const isElevated = riskNum > 20;
+    const isHigh = riskNum > 50;
+
+    let badgeText = "LOW RISK // NORMAL";
+    let badgeColor = "bg-emerald-900/40 text-emerald-500 border border-emerald-500/30";
+
+    if (isHigh) {
+        badgeText = "HIGH RISK // CRITICAL";
+        badgeColor = "bg-red-900/40 text-red-500 border border-red-500/30";
+    } else if (isElevated) {
+        badgeText = "ELEVATED // GUARDED";
+        badgeColor = "bg-amber-900/40 text-amber-500 border border-amber-500/30";
+    }
 
     return (
         <div className="relative w-full max-w-lg mx-auto flex flex-col items-center">
@@ -43,26 +57,62 @@ export default function StrategicSonar({ blips, riskLevel, ewJamming }: Strategi
                 </motion.div>
 
                 {/* Blips */}
-                {blips.map((blip) => (
-                    <motion.div
-                        key={blip.id}
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="absolute bottom-0 left-1/2 origin-bottom transition-all duration-1000"
-                        style={{
-                            transform: `translateX(${blip.x * 2}px) translateY(-${Math.abs(blip.y * 2) + 20}px)`
-                        }}
-                    >
-                        {blip.type === 'MILITARY' ? (
-                            <div className="h-3 w-3 relative flex items-center justify-center">
-                                <div className="absolute inset-0 bg-red-500/30 animate-ping rounded-full" />
-                                <div className="w-1.5 h-1.5 bg-red-500 rounded-sm rotate-45" />
-                            </div>
-                        ) : (
-                            <div className="h-1 w-1 bg-emerald-500/80 rounded-full shadow-[0_0_4px_#34D399]" />
-                        )}
-                    </motion.div>
-                ))}
+                {blips.map((blip) => {
+                    const parsedRisk = parseInt(riskLevel);
+
+                    // TIER 3: HIGH RISK (>50%) - RED FIGHTER JETS
+                    if (parsedRisk > 50) {
+                        return (
+                            <motion.div
+                                key={blip.id}
+                                initial={{ scale: 0 }}
+                                animate={{ scale: 1 }}
+                                className="absolute bottom-0 left-1/2 origin-bottom transition-all duration-1000"
+                                style={{
+                                    transform: `translateX(${blip.x * 2}px) translateY(-${Math.abs(blip.y * 2) + 20}px)`
+                                }}
+                            >
+                                <div className="relative flex items-center justify-center">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.8)]">
+                                        <path d="M12 2L2 22l10-3 10 3L12 2z" />
+                                    </svg>
+                                </div>
+                            </motion.div>
+                        );
+                    }
+                    // TIER 2: GUARDED (20-50%) - AMBER DOTS
+                    else if (parsedRisk > 20) {
+                        return (
+                            <motion.div
+                                key={blip.id}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="absolute bottom-0 left-1/2 origin-bottom transition-all duration-1000"
+                                style={{
+                                    transform: `translateX(${blip.x * 2}px) translateY(-${Math.abs(blip.y * 2) + 20}px)`
+                                }}
+                            >
+                                <div className="h-2 w-2 bg-amber-500/80 rounded-full shadow-[0_0_8px_#F59E0B] animate-pulse" />
+                            </motion.div>
+                        );
+                    }
+                    // TIER 1: LOW (<20%) - GREEN DOTS
+                    else {
+                        return (
+                            <motion.div
+                                key={blip.id}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                className="absolute bottom-0 left-1/2 origin-bottom transition-all duration-1000"
+                                style={{
+                                    transform: `translateX(${blip.x * 2}px) translateY(-${Math.abs(blip.y * 2) + 20}px)`
+                                }}
+                            >
+                                <div className="h-1.5 w-1.5 bg-emerald-500/60 rounded-full shadow-[0_0_4px_#10B981]" />
+                            </motion.div>
+                        );
+                    }
+                })}
 
                 {/* Grid Lines */}
                 <div className="absolute bottom-0 left-0 w-full h-px bg-coyote-tan/20" />
@@ -75,8 +125,8 @@ export default function StrategicSonar({ blips, riskLevel, ewJamming }: Strategi
             {/* Risk Badge */}
             <div className="mt-4 flex flex-col items-center">
                 <div className="text-5xl font-bold tracking-tighter text-coyote-tan">{riskLevel}%</div>
-                <div className={`px-3 py-0.5 text-[10px] uppercase font-bold tracking-widest rounded-full mt-2 transition-colors duration-500 ${isElevated ? 'bg-red-900/40 text-red-500 border border-red-500/30' : 'bg-emerald-900/40 text-emerald-500 border border-emerald-500/30'}`}>
-                    {isElevated ? 'ELEVATED RISK' : 'LOW RISK // NORMAL'}
+                <div className={`px-3 py-0.5 text-[10px] uppercase font-bold tracking-widest rounded-full mt-2 transition-colors duration-500 ${badgeColor}`}>
+                    {badgeText}
                 </div>
             </div>
 

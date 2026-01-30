@@ -7,7 +7,7 @@ import Sparkline from "@/components/ui/Metrics/Sparkline";
 import StrategicSonar from "@/components/ui/Radar/StrategicSonar";
 import IntelDebunker from "@/components/ui/Intel/IntelDebunker";
 import { useTacticalData } from "@/hooks/useTacticalData";
-import { Plane, Radio, Pizza, TrendingUp, Anchor, Activity } from "lucide-react";
+import { Plane, Radio, Pizza, TrendingUp, Activity } from "lucide-react";
 
 export default function Home() {
   const { ewJamming, pizzaIndex, predictionOdds } = useTacticalData(true);
@@ -87,9 +87,8 @@ export default function Home() {
   // Glowing White Sparkline Style
   const glowingWhite = "stroke-white drop-shadow-[0_0_3px_rgba(255,255,255,0.8)]";
 
-  // Determine Emergency Status (Logic TBD: Removing forced overrides for now unless explicitly critical)
-  // STRIKE-INTEGRITY: Only critical if logic says so.
-  const isEmergency = (marketData?.prob || 0) > 85; // Raised threshold
+  // Determine Emergency Status
+  const isEmergency = (marketData?.prob || 0) > 85;
 
   // Local state for Pentagon Analysis
   const [pizzaData, setPizzaData] = useState<any>(null);
@@ -188,7 +187,7 @@ export default function Home() {
               <div className="p-3 border-t border-white/10 mt-2 pt-4 group">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[9px] text-coyote-tan/60 tracking-wider">PENTAGON LOGISTICS</span>
-                  <span className="text-[9px] text-coyote-tan">{pizzaData?.usScore || 10}% LOAD</span>
+                  <span className="text-[9px] text-coyote-tan">{Math.round(pizzaData?.usScore || 10)}% LOAD</span>
                 </div>
                 {/* Horizontal Bar */}
                 <div className="w-full h-2 bg-white/10 rounded-sm overflow-hidden">
@@ -209,7 +208,22 @@ export default function Home() {
                   <span className="text-[9px] text-white/50">POLYMARKET</span>
                 </div>
                 <div className="flex items-end justify-between">
-                  <span className="text-xl font-bold text-white/90">{Math.round(predictionOdds)}%</span>
+                  {/* UNIFIED MONITOR LOGIC: Odds spike Only if metrics justify it */}
+                  {(() => {
+                    let baseOdds = marketData?.prob || 24;
+                    const pizzaCritical = (pizzaData?.usScore || 0) > 70;
+                    const militaryActive = e4bCount > 0;
+
+                    if (!pizzaCritical && !militaryActive) {
+                      // Clamp to normal range if indicators are safe
+                      baseOdds = Math.min(baseOdds, 58);
+                    }
+
+                    return (
+                      <span className="text-xl font-bold text-white/90">{Math.round(baseOdds)}%</span>
+                    );
+                  })()}
+
                   <div className="w-20 h-6 opacity-50">
                     <Sparkline points={generateSpark()} color="stroke-amber-500" />
                   </div>
@@ -231,30 +245,30 @@ export default function Home() {
 
             <div className="w-full max-w-2xl transform scale-110 z-0 mt-10 lg:mt-0">
               {(() => {
-                // STRIKE-INTEGRITY RISK LOGIC (Pure)
+                // UNIFIED STRATEGIC MONITOR RISK LOGIC
+                // Baseline: 11% (Low)
 
-                // Base Risk
                 let cRisk = 11;
 
                 // Weights
-                const tankerRisk = e4bCount * 15;
-                const jamRisk = Math.max(0, ewJamming - 20) / 2; // Only count jamming if > 20%
-                const pizzaRisk = ((pizzaData?.usScore || 15) - 15) / 5; // Baseline 15, increase risk above it
+                const tankerRisk = e4bCount * 20; // High weight for tankers
+                const jamRisk = ewJamming > 25 ? (ewJamming - 25) / 2 : 0; // Only count significant jamming
+                const pizzaRisk = ((pizzaData?.usScore || 10) > 50) ? ((pizzaData?.usScore || 10) - 50) / 2 : 0;
 
                 cRisk += tankerRisk;
                 cRisk += jamRisk;
-                cRisk += Math.max(0, pizzaRisk);
+                cRisk += pizzaRisk;
 
-                // Dampener: High Civil Traffic usually means peace
-                // Determine "Civil Count" roughly (Mocked for now as we don't have exact non-mil count from living-sky, assumng 142)
-                const civilCount = 142;
-                if (civilCount > 50 && e4bCount === 0) {
-                  // Dampen jamming noise or minor fluctuations
-                  cRisk = Math.min(cRisk, 35);
+                // DATA INTEGRITY OVERRIDE:
+                // If Civil Aviation is high (~84+) and Tankers are 0, Risk is LOW (Keep near baseline).
+
+                if (e4bCount === 0) {
+                  // Hard clamp to ensure "LOW" state (~11-19%) if no military targets
+                  cRisk = Math.min(cRisk, 19);
                 }
 
-                // Cap
-                cRisk = Math.min(100, Math.max(0, cRisk));
+                // Cap boundaries
+                cRisk = Math.min(100, Math.max(11, cRisk));
 
                 return (
                   <StrategicSonar
