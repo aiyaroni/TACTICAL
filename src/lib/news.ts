@@ -7,16 +7,15 @@ export interface NewsArticle {
 }
 
 const NEWS_API_KEY = process.env.NEWS_API_KEY;
-const NEWS_URL = `https://newsapi.org/v2/everything?q=military+geopolitics&language=en&sortBy=publishedAt&pageSize=10&apiKey=`;
 
-export async function fetchMilitaryNews(): Promise<NewsArticle[]> {
+export async function fetchMilitaryNews(query = "military+geopolitics"): Promise<NewsArticle[]> {
     if (!NEWS_API_KEY) {
         console.warn("NEWS_API_KEY missing");
         return [];
     }
 
     try {
-        const res = await fetch(`${NEWS_URL}${NEWS_API_KEY}`, {
+        const res = await fetch(`https://newsapi.org/v2/everything?q=${query}&language=en&sortBy=publishedAt&pageSize=10&apiKey=${NEWS_API_KEY}`, {
             next: { revalidate: 900 } // 15 minutes cache
         });
 

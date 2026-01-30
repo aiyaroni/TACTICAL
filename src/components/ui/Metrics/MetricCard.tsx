@@ -4,7 +4,7 @@ import { LucideIcon } from "lucide-react";
 
 interface MetricCardProps {
     title: string;
-    value?: string | number;
+    value?: string | number | ReactNode;
     subLabel?: string;
     icon?: LucideIcon;
     trendData?: number[]; // For Sparkline
