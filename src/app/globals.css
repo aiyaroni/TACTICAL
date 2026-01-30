@@ -7,14 +7,14 @@
 
   --font-mono: var(--font-geist-mono);
 
-  --animate-marquee: marquee 15s linear infinite;
+  --animate-marquee: marquee 20s linear infinite;
 
   @keyframes marquee {
-    0% {
+    from {
       transform: translateX(100%);
     }
 
-    100% {
+    to {
       transform: translateX(-100%);
     }
   }

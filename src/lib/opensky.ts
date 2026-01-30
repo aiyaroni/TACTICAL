@@ -30,9 +30,8 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
         return [];
     }
 
-    const headers = new Headers();
-    headers.set('Authorization', 'Basic ' + Buffer.from(username + ':' + password).toString('base64'));
-    headers.set('User-Agent', 'TacticalDashboard/1.0 (contact: your@email.com)'); // OpenSky requires a User-Agent
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
     // Build query params
     const params = new URLSearchParams();
@@ -43,9 +42,15 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
 
     try {
         const response = await fetch(fetchUrl, {
-            headers,
+            headers: {
+                'Authorization': 'Basic ' + Buffer.from(username + ':' + password).toString('base64'),
+                'User-Agent': 'TacticalDashboard/1.0 (contact: tactical@example.com)',
+                'Accept': 'application/json'
+            },
             next: { revalidate: 15 },
+            signal: controller.signal
         });
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             console.error(`OpenSky API error: ${response.status} ${response.statusText}`);

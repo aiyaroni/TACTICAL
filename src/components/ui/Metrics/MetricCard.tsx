@@ -14,7 +14,7 @@ interface MetricCardProps {
     noWrapper?: boolean;
 }
 
-export default function MetricCard({ title, value, subLabel, icon: Icon, children, className }: MetricCardProps) {
+export default function MetricCard({ title, value, subLabel, icon: Icon, children, className, noWrapper }: MetricCardProps) {
     return (
         <div className={clsx("relative tactical-clip border border-white/10 bg-matte-black p-4 transition-all hover:bg-white/5", className)}>
 

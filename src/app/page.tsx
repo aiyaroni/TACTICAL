@@ -168,13 +168,13 @@ export default function Home() {
                 >
                   <div className="flex flex-col h-full justify-between">
                     <Sparkline points={generateSpark()} color={isEmergency ? 'stroke-red-500' : (pizzaStatus === 'ELEVATED' ? 'stroke-amber-500' : glowingWhite)} />
-                    {pizzaData?.justification && (
-                      <div className="mt-1 relative overflow-hidden h-4">
-                        <div className="text-[9px] text-coyote-tan/70 font-mono tracking-tight whitespace-nowrap animate-marquee">
-                                        // INTELLIGENCE: {pizzaData.justification.toUpperCase()}
-                        </div>
+
+                    <div className="mt-1 relative overflow-hidden h-4 bg-white/5 rounded-sm">
+                      <div className="text-[9px] text-coyote-tan/90 font-mono tracking-tight whitespace-nowrap animate-marquee flex items-center h-full">
+                           // INTELLIGENCE: {(pizzaData?.justification || "ANALYZING CLASSIFIED DATA STREAMS... STANDBY...").toUpperCase()}
                       </div>
-                    )}
+                    </div>
+
                   </div>
                 </MetricCard>
               );
@@ -205,8 +205,8 @@ export default function Home() {
             {/* 4. MARKET */}
             <MetricCard
               title="LIVE CONFLICT ODDS (POLYMARKET)"
-              value={marketData ? `${Math.round(marketData.prob)}%` : `${Math.round(predictionOdds)}%`}
-              subLabel={marketData ? marketData.label.substring(0, 40) + (marketData.label.length > 40 ? "..." : "") : "PREDICTION ODDS"}
+              value={`${Math.round(marketData?.prob || predictionOdds)}%`}
+              subLabel={marketData?.label ? marketData.label.substring(0, 40) + (marketData.label.length > 40 ? "..." : "") : "REGIONAL CONFLICT ODDS"}
               icon={TrendingUp}
               className={marketData?.prob && marketData.prob > 75 ? 'border-red-500/60 bg-red-900/10' : ''}
             >
