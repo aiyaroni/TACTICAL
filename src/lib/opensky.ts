@@ -37,8 +37,11 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
     const params = new URLSearchParams();
     TARGET_ICAOS.forEach((icao) => params.append('icao24', icao));
 
+    const fetchUrl = `${OPENSKY_API_URL}?${params.toString()}`;
+    console.log(`[OpenSky] Fetching: ${fetchUrl}`);
+
     try {
-        const response = await fetch(`${OPENSKY_API_URL}?${params.toString()}`, {
+        const response = await fetch(fetchUrl, {
             headers,
             next: { revalidate: 15 },
         });

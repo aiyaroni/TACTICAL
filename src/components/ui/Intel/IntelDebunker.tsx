@@ -49,8 +49,8 @@ export default function IntelDebunker() {
     return (
         <MetricCard title="RUMOR ANALYSIS" className="h-full flex flex-col p-4 !pb-2">
 
-            {/* Scrollable Feed Container - Zero Scroll Policy Enforcement */}
-            <div className="flex-1 overflow-y-auto space-y-3 mb-3 pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-tactical-teal/20 hover:scrollbar-thumb-tactical-teal/40">
+            {/* Scrollable Feed Container - Strict Height Enforcement */}
+            <div className="flex-1 max-h-[400px] overflow-y-auto space-y-3 mb-3 pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-tactical-teal/20 hover:scrollbar-thumb-tactical-teal/40">
                 {feed.map((item) => (
                     <div key={item.id} className="border-l-2 border-white/10 pl-3 py-1">
                         <div className="flex items-center justify-between mb-1">
@@ -62,9 +62,9 @@ export default function IntelDebunker() {
                             </span>
                             <span className="text-white/20 text-[9px] font-mono">{item.timestamp}</span>
                         </div>
-                        <p className="text-coyote-tan/80 text-xs leading-relaxed mb-1">{item.text}</p>
+                        <p className="text-coyote-tan/90 text-xs leading-relaxed mb-1 font-medium">{item.text}</p>
                         {item.summary && (
-                            <p className="text-[10px] text-tactical-teal/60 italic border-t border-white/5 pt-1 mt-1 font-mono">
+                            <p className="text-[10px] text-tactical-teal/80 italic border-t border-white/5 pt-1 mt-1 font-mono">
                                 // {item.summary}
                             </p>
                         )}
