@@ -19,6 +19,7 @@ export interface OpenSkyState {
 }
 
 // Correct Auth URL with /auth/ prefix
+const OPENSKY_API_URL = 'https://opensky-network.org/api/states/all';
 const AUTH_URL = 'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token';
 
 async function getAccessToken(clientId: string, clientSecret: string): Promise<string | null> {
