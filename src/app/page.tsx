@@ -28,25 +28,33 @@ export default function Home() {
         const data = await res.json();
         if (data.states && Array.isArray(data.states)) {
 
-          // Map to Blip format for Radar
-          // We map a subset or all, but let's ensure we map enough for visual.
-          const newBlips = data.states.map((state: any) => ({
-            id: state.icao24,
-            icao24: state.icao24,
-            callsign: state.callsign,
-            x: (state.longitude % 10) * 5,
-            y: (state.latitude % 10) * 5,
-            lastContact: state.last_contact,
-            type: 'MILITARY' // Assume filtered collection are military/notable
-          }));
-          setBlips(newBlips);
+          // TARGET DEFINITIONS (Shared with backend but good to check here)
+          const MILITARY_ICAOS = ['adfeb3', 'adfeb4', 'adfeb5', 'adfeb6', 'ae01d2', 'ae04d7', '154078', '738011', '738012', '738031'];
 
-          if (data.states.length > 0) {
+          // Filter & Map
+          const militaryAssets = data.states.filter((s: any) => MILITARY_ICAOS.includes(s.icao24));
+          const civilAssets = data.states.filter((s: any) => !MILITARY_ICAOS.includes(s.icao24));
+
+          const newBlips = data.states.map((state: any) => {
+            const isMil = MILITARY_ICAOS.includes(state.icao24);
+            return {
+              id: state.icao24,
+              icao24: state.icao24,
+              callsign: state.callsign,
+              x: (state.longitude % 10) * 5,
+              y: (state.latitude % 10) * 5,
+              lastContact: state.last_contact,
+              type: isMil ? 'MILITARY' : 'CIVIL'
+            };
+          });
+
+          setBlips(newBlips);
+          setE4bCount(militaryAssets.length);
+
+          if (newBlips.length > 0) {
             setAssetStatus("ACTIVE");
-            setE4bCount(data.states.length);
           } else {
             setAssetStatus("STANDBY");
-            setE4bCount(0);
           }
         }
       } catch (e) {
@@ -130,7 +138,7 @@ export default function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 h-full">
 
           {/* LEFT COLUMN (Cols 1-3): LIVE SIGNALS TELEMETRY */}
-          <div className="lg:col-span-3 flex flex-col h-full bg-white/5 border border-white/10 overflow-hidden relative">
+          <div className="lg:col-span-3 flex flex-col h-full bg-white/5 border border-white/10 overflow-hidden relative order-2 lg:order-none">
 
             {/* Header */}
             <div className="h-10 border-b border-white/10 flex items-center px-4 bg-white/5 backdrop-blur-md">
@@ -150,19 +158,13 @@ export default function Home() {
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[9px] text-coyote-tan/60 tracking-wider">CIVIL AVIATION</span>
                   <span className="text-[9px] text-emerald-500 font-bold bg-emerald-900/20 px-1.5 py-0.5 rounded-sm">
-                    {e4bCount === undefined ? 'LINK DOWN' : 'ACTIVE'}
+                    {(blips.length - e4bCount) > 0 ? 'ACTIVE' : 'LINK DOWN'}
                   </span>
                 </div>
                 <div className="flex items-end justify-between">
                   <div className="flex flex-col">
                     <span className="text-2xl font-bold text-white/90">
-                      {/* NO MOCK DATA. Real Only. If 0/undefined, assume N/A or Scanning if we have no count. 
-                                    Since we only get military/filtered from 'living-sky', we don't actually track ALL civil. 
-                                    For "Stability", we will show 'N/A' if we can't confirm civil count, or 0 if that's what we have.
-                                    However, living-sky was sending filtered list. If we want civil we need a new source or assume N/A.
-                                    User said "Show N/A".
-                                */}
-                      N/A
+                      {(blips.length - e4bCount) > 0 ? (blips.length - e4bCount) : 0}
                     </span>
                     <span className="text-[8px] text-white/40">AIRFRAMES DETECTED</span>
                   </div>
@@ -244,7 +246,7 @@ export default function Home() {
           </div>
 
           {/* CENTER COLUMN (Cols 4-9): SEMI-CIRCLE RADAR */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center relative order-1 lg:order-none">
+          <div className="lg:col-span-6 flex flex-col items-center justify-center relative order-first lg:order-none">
 
             {/* Radar Header */}
             <div className="absolute top-4 left-0 w-full flex items-center justify-between px-10 z-30 pointer-events-none">
@@ -255,32 +257,38 @@ export default function Home() {
 
             <div className="w-full max-w-2xl transform scale-110 z-0 mt-10 lg:mt-0">
               {(() => {
-                // STABILIZED STRATEGIC MONITOR RISK LOGIC (Step 350)
+                // STABILIZED STRATEGIC MONITOR RISK LOGIC
 
                 // Baseline Risk (Quiet/Normal)
                 let cRisk = 11;
 
-                // Data Constants
-                // Civil Aviation > 80 is "Normal". Tankers == 0 is "Peace".
-                // Since we don't have Civil Count, we assume "Normal" unless Tankers > 0.
+                // Weights
+                const tankerRisk = e4bCount * 20; // High weight for tankers
+                const jamRisk = ewJamming > 25 ? (ewJamming - 25) / 2 : 0;
+                const pizzaRisk = ((pizzaData?.usScore || 10) > 50) ? ((pizzaData?.usScore || 10) - 50) / 2 : 0;
 
-                const hasTankers = e4bCount > 0;
-                const pizzaSpike = (pizzaData?.usScore || 10) > 70;
+                // Market Influence (Dynamic Sync)
+                // If market > 45%, add to risk. If < 45%, reduce risk (stabilize).
+                const marketProb = marketData?.prob || 45;
+                const marketFactor = (marketProb - 45) / 2; // e.g. 55% -> +5 Risk. 13% -> -16 Risk.
 
-                // ESCALATION LOGIC:
-                // Only go > 20% if TWO or more signals diverge.
-                // i.e., Tankers AND Pizza. Or Tankers AND Jamming.
+                cRisk += tankerRisk;
+                cRisk += jamRisk;
+                cRisk += pizzaRisk;
+                cRisk += marketFactor;
 
-                if (hasTankers && pizzaSpike) {
-                  cRisk = 55; // Elevated/High
-                } else if (hasTankers) {
-                  cRisk = 19; // Guarded, but not Critical yet (needs corroboration)
-                } else if (pizzaSpike) {
-                  cRisk = 15; // Logistical anomaly only
+                // DATA INTEGRITY OVERRIDE:
+                // If Civil Aviation is high (e.g. > 50) and Tankers are 0, Risk is LOW (Keep near baseline).
+                // "Civil Count" is blips.length - e4bCount.
+                const civilCount = blips.length - e4bCount;
+
+                if (civilCount > 50 && e4bCount === 0) {
+                  // Dampen jamming/market noise if civil traffic is flowing freely
+                  cRisk = Math.min(cRisk, 19);
                 }
 
-                // Fallback/Safety: If entirely empty data (and we're not just 0 count, but error), return 0?
-                // But here e4bCount is 0.
+                // Cap boundaries
+                cRisk = Math.min(100, Math.max(0, cRisk));
 
                 return (
                   <StrategicSonar
@@ -301,5 +309,4 @@ export default function Home() {
         </div>
       </main>
     </div>
-  );
 }

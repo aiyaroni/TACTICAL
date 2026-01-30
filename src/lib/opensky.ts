@@ -45,22 +45,26 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
-    // Build query params
-    const params = new URLSearchParams();
-    TARGET_ICAOS.forEach((icao) => params.append('icao24', icao));
+    // Bounding Box for "Sector 7" (Middle East: Israel, Iran, Gulf)
+    // lamin, lomin, lamax, lomax
+    const params = new URLSearchParams({
+        lamin: '24.0',
+        lomin: '34.0',
+        lamax: '42.0',
+        lomax: '60.0'
+    });
 
     const fetchUrl = `${OPENSKY_API_URL}?${params.toString()}`;
-    console.log(`[OpenSky] Fetching: ${fetchUrl}`);
+    console.log(`[OpenSky] Fetching Sector 7: ${fetchUrl}`);
 
     try {
-        console.log(`[OpenSky] Requesting: ${fetchUrl}`);
         const response = await fetch(fetchUrl, {
             headers: {
                 'Authorization': 'Basic ' + Buffer.from(username + ':' + password).toString('base64'),
                 'User-Agent': 'TacticalDashboard/1.0',
                 'Accept': 'application/json'
             },
-            next: { revalidate: 15 },
+            next: { revalidate: 30 }, // 30s cache
             signal: controller.signal
         });
         clearTimeout(timeoutId);
