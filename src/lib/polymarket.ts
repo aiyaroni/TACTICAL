@@ -11,44 +11,34 @@ const GAMMA_API_URL = "https://gamma-api.polymarket.com/markets";
 export async function fetchConflictOdds(): Promise<MarketData | null> {
     try {
         // Query for active markets with relevant tags.
-        // We'll try query "Middle East" or "War" to find high tension markets.
+        // REMOVED 'sort' and 'order' as they caused 422 errors.
+        // Using simple 'q' parameter which is more robust.
         const params = new URLSearchParams({
             limit: "10",
             active: "true",
             closed: "false",
-            sort: "volume",
-            order: "desc",
-            tag_slug: "middle-east" // Middle East is usually the busiest conflict tag. Fallback to 'war' if empty?
+            q: "Middle East" // Primary search
         });
 
         // First attempt: Middle East
         let res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } }); // 10m cache
         let data = await res.json();
 
-        // If no results, try 'war'
-        if (!data || data.length === 0) {
-            params.set("tag_slug", "");
+        // If no results, try 'War'
+        if (!data || !Array.isArray(data) || data.length === 0) {
             params.set("q", "War"); // Search for "War" generally
             res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
             data = await res.json();
         }
 
-        // Third attempt: "Conflict" maybe?
-        if (!data || data.length === 0) {
-            params.set("q", "Conflict");
+        // Third attempt: "Israel"
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            params.set("q", "Israel");
             res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
             data = await res.json();
         }
 
-        // Fallback: Try "Global Conflict" or "Politics" if War/Conflict fails, but prioritize a specific known market logic if possible.
-        // Using a broad "politics" search sorted by volume often yields the biggest conflict markets too.
-        if (!data || data.length === 0) {
-            params.set("tag_slug", "");
-            params.set("q", "Politics");
-            res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
-            data = await res.json();
-        }
-
+        // Check again
         if (!data || !Array.isArray(data) || data.length === 0) return null;
 
         // Iterate to find a binary YES/NO market

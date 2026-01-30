@@ -18,8 +18,8 @@ export interface OpenSkyState {
     position_source: number;
 }
 
-const OPENSKY_API_URL = 'https://opensky-network.org/api/states/all';
-const AUTH_URL = 'https://auth.opensky-network.org/realms/master/protocol/openid-connect/token';
+// Correct Auth URL with /auth/ prefix
+const AUTH_URL = 'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token';
 
 async function getAccessToken(clientId: string, clientSecret: string): Promise<string | null> {
     try {
@@ -28,11 +28,14 @@ async function getAccessToken(clientId: string, clientSecret: string): Promise<s
         params.append('client_id', clientId);
         params.append('client_secret', clientSecret);
 
+        // Debug Log
+        // console.log(`[OpenSky Auth] Requesting token from ${AUTH_URL}`);
+
         const res = await fetch(AUTH_URL, {
             method: 'POST',
             headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
             body: params,
-            cache: 'no-store' // Don't cache the token request itself
+            cache: 'no-store'
         });
 
         if (!res.ok) {
