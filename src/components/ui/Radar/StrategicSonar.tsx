@@ -123,7 +123,7 @@ export default function StrategicSonar() {
             <div className="absolute inset-0 flex items-center justify-center z-20">
                 {blips.map((blip) => {
                     const riskNum = parseInt(riskLevel);
-                    // Tier 1: Low Risk (Green Dots)
+                    // Tier 1: Low Risk (Green Dots) - 0% to 40%
                     if (riskNum <= 40) {
                         return (
                             <motion.div

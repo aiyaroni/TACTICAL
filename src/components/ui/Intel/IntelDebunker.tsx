@@ -1,19 +1,20 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Send, ShieldAlert, CheckCircle, HelpCircle } from "lucide-react";
 import MetricCard from "../Metrics/MetricCard";
 import { clsx } from "clsx";
 
-type Rumor = {
-    id: number;
+type FeedItem = {
+    id: number | string;
     text: string;
-    status: "VERIFIED" | "FAKE" | "UNCONFIRMED";
+    status: "VERIFIED" | "FAKE" | "UNCONFIRMED" | "NEWS";
     summary?: string;
     timestamp: string;
+    url?: string;
 };
 
-const INITIAL_DATA: Rumor[] = [
+const INITIAL_DATA: FeedItem[] = [
     {
         id: 102,
         text: "Massive GPS interference reported in Northern Israel and Lebanon border.",
@@ -32,11 +33,37 @@ const INITIAL_DATA: Rumor[] = [
 
 export default function IntelDebunker() {
     const [input, setInput] = useState("");
-    const [feed, setFeed] = useState<Rumor[]>(INITIAL_DATA);
+    const [feed, setFeed] = useState<FeedItem[]>(INITIAL_DATA);
+
+    // Fetch News
+    useEffect(() => {
+        const fetchNews = async () => {
+            try {
+                const res = await fetch('/api/tactical/news');
+                const data = await res.json();
+                if (data.articles) {
+                    const newsItems: FeedItem[] = data.articles.map((art: any, i: number) => ({
+                        id: `news-${i}`,
+                        text: art.title,
+                        status: "NEWS",
+                        summary: art.source.name,
+                        timestamp: new Date(art.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + "Z",
+                        url: art.url
+                    }));
+                    // Interleave or append news. For now, we prepend news to the initial tactical data logic?
+                    // Let's just combine them.
+                    setFeed(prev => [...newsItems.slice(0, 5), ...prev]);
+                }
+            } catch (e) {
+                console.error("News fetch failed", e);
+            }
+        };
+        fetchNews();
+    }, []);
 
     const handleAnalyze = () => {
         if (!input.trim()) return;
-        const newRumor: Rumor = {
+        const newRumor: FeedItem = {
             id: Date.now(),
             text: input,
             status: "UNCONFIRMED",
@@ -47,7 +74,7 @@ export default function IntelDebunker() {
     };
 
     return (
-        <MetricCard title="RUMOR ANALYSIS" className="h-full flex flex-col p-4 !pb-2">
+        <MetricCard title="INTEL & NEWS" className="h-full flex flex-col p-4 !pb-2">
 
             {/* Scrollable Feed Container - Strict Height Enforcement */}
             <div className="flex-1 max-h-[400px] overflow-y-auto space-y-3 mb-3 pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-tactical-teal/20 hover:scrollbar-thumb-tactical-teal/40">
@@ -56,13 +83,17 @@ export default function IntelDebunker() {
                         <div className="flex items-center justify-between mb-1">
                             <span className={clsx("text-[10px] font-bold tracking-wider",
                                 item.status === "VERIFIED" ? "text-emerald-400" :
-                                    item.status === "FAKE" ? "text-red-500" : "text-amber-400"
+                                    item.status === "FAKE" ? "text-red-500" :
+                                        item.status === "NEWS" ? "text-blue-400" : "text-amber-400"
                             )}>
                                 {item.status}
                             </span>
                             <span className="text-white/20 text-[9px] font-mono">{item.timestamp}</span>
                         </div>
-                        <p className="text-coyote-tan/90 text-xs leading-relaxed mb-1 font-medium">{item.text}</p>
+                        <a href={item.url} target="_blank" rel="noopener noreferrer" className={clsx("text-xs leading-relaxed mb-1 font-medium block hover:underline",
+                            item.status === 'NEWS' ? "text-white/90" : "text-coyote-tan/90")}>
+                            {item.text}
+                        </a>
                         {item.summary && (
                             <p className="text-[10px] text-tactical-teal/80 italic border-t border-white/5 pt-1 mt-1 font-mono">
                                 // {item.summary}
