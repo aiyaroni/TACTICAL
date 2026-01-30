@@ -122,7 +122,7 @@ export default function Home() {
             <MetricCard
               title="ASSETS"
               value={assetStatus}
-              subLabel="SENSOR INTERFERENCE ACTIVE"
+              subLabel={Math.round(ewJamming) > 50 || isEmergency ? "CIVILIAN TRAFFIC SUPPRESSED [EW ACTIVE]" : "MILITARY SIGNATURES ONLY"}
               icon={Plane}
               className={assetStatus === 'ACTIVE' ? 'border-coyote-tan/50 bg-coyote-tan/5' : ''}
             >
@@ -161,6 +161,15 @@ export default function Home() {
                 borderColor = "border-amber-500/50 bg-amber-900/5";
               }
 
+              // Calculate Pie Ratios
+              const total = (usScore + iranScore) || 1;
+              const usRatio = (usScore / total) * 100;
+              // USA starts at 0, ends at usRatio. Iran starts at usRatio, ends at 100.
+
+              // Tactical Colors
+              const colUSA = "#4A5568"; // Slate Blue-Grey
+              const colIran = "#8E2424"; // Deep Oxide Red
+
               return (
                 <MetricCard
                   title="DUAL-VECTOR MONITOR"
@@ -169,28 +178,25 @@ export default function Home() {
                   icon={Pizza}
                   className={borderColor}
                 >
-                  <div className="flex flex-col h-full justify-between">
-                    {/* Multi-Sparkline or Split Bar */}
-                    <div className="flex items-end justify-between gap-1 h-8 mb-1 px-1">
-                      <div className="flex flex-col items-center gap-1 w-1/3">
-                        <div className="w-full bg-white/10 h-6 relative overflow-hidden rounded-sm">
-                          <div className="absolute bottom-0 w-full bg-blue-500/60" style={{ height: `${usScore}%` }} />
-                        </div>
-                        <span className="text-[9px] text-white/50 tracking-wider">USA</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 w-1/3">
-                        <div className="w-full bg-white/10 h-6 relative overflow-hidden rounded-sm">
-                          <div className="absolute bottom-0 w-full bg-red-500/60" style={{ height: `${iranScore}%` }} />
-                        </div>
-                        <span className="text-[9px] text-white/50 tracking-wider">IRN</span>
-                      </div>
-                      <div className="flex flex-col items-center gap-1 w-1/3">
-                        <span className="text-lg font-bold text-white/90 leading-none">{globalScore}</span>
-                        <span className="text-[9px] text-white/50 tracking-wider">NET</span>
+                  <div className="flex flex-col h-full justify-between pt-2">
+
+                    {/* Tactical Donut Chart */}
+                    <div className="relative h-24 w-full flex items-center justify-center">
+                      {/* The Donut Ring */}
+                      <div
+                        className="h-20 w-20 rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] border-2 border-white/5"
+                        style={{
+                          background: `conic-gradient(${colUSA} 0% ${usRatio}%, ${colIran} ${usRatio}% 100%)`
+                        }}
+                      />
+                      {/* Center Hole & Value */}
+                      <div className="absolute h-14 w-14 bg-matte-black rounded-full flex flex-col items-center justify-center border border-white/10 shadow-inner">
+                        <span className="text-xl font-bold text-white/90 leading-none">{globalScore}</span>
+                        <span className="text-[8px] text-white/40 tracking-wider">NET</span>
                       </div>
                     </div>
 
-                    <div className="mt-2 relative overflow-hidden h-6 bg-white/5 rounded-sm border border-white/5">
+                    <div className="mt-1 relative overflow-hidden h-6 bg-white/5 rounded-sm border border-white/5">
                       <div className="text-[10px] text-coyote-tan/90 font-mono tracking-tight whitespace-nowrap animate-marquee flex items-center h-full px-2">
                            // ANALYSIS: {(pizzaData?.justification || "INITIALIZING DATA LINK... STANDBY...").toUpperCase()}
                       </div>
