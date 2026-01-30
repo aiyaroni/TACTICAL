@@ -13,8 +13,10 @@ export default function Home() {
   const { ewJamming, pizzaIndex, predictionOdds } = useTacticalData(true);
 
   // Local state for Assets (OpenSky)
+  // Local state for Assets (OpenSky)
   const [assetStatus, setAssetStatus] = useState<"STANDBY" | "ACTIVE">("STANDBY");
   const [e4bCount, setE4bCount] = useState(0);
+  const [blips, setBlips] = useState<any[]>([]); // New State for Blips
 
   // Local state for Market (Polymarket)
   const [marketData, setMarketData] = useState<{ prob: number; label: string } | null>(null);
@@ -26,6 +28,19 @@ export default function Home() {
         const res = await fetch('/api/tactical/living-sky');
         const data = await res.json();
         if (data.states && Array.isArray(data.states)) {
+
+          // Map to Blip format for Radar
+          const newBlips = data.states.map((state: any) => ({
+            id: state.icao24,
+            icao24: state.icao24,
+            callsign: state.callsign,
+            x: (state.longitude % 10) * 5,
+            y: (state.latitude % 10) * 5,
+            lastContact: state.last_contact,
+            type: 'MILITARY' // Assume filtered collection are military/notable
+          }));
+          setBlips(newBlips);
+
           if (data.states.length > 0) {
             setAssetStatus("ACTIVE");
             setE4bCount(data.states.length);
