@@ -140,65 +140,59 @@ export default function Home() {
               <Sparkline points={generateSpark()} color={glowingWhite} />
             </MetricCard>
 
-            {/* 3. DUAL-VECTOR MONITOR */}
+            {/* 3. PENTAGON PIZZA INDEX */}
             {(() => {
-              // Dual Vector Data
-              const globalScore = pizzaData?.globalScore || 20;
+              // US-Only Data (Pizza Index)
               const usScore = pizzaData?.usScore || 10;
-              const iranScore = pizzaData?.iranScore || 30;
 
-              let status = "NORMAL";
+              let status = "NORMAL LOGISTICS";
               let statusColor = "text-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.4)]";
               let borderColor = "";
 
-              if (globalScore >= 80 || isEmergency) {
-                status = "CRITICAL";
+              if (usScore >= 75 || isEmergency) {
+                status = "HIGH STAFF TURNOUT [CRITICAL]";
                 statusColor = "text-red-500 animate-pulse shadow-[0_0_15px_rgba(239,68,68,0.6)]";
                 borderColor = "border-red-500/50 bg-red-900/10";
-              } else if (globalScore >= 50) {
-                status = "ELEVATED";
+              } else if (usScore >= 50) {
+                status = "ELEVATED TRAFFIC DETECTED";
                 statusColor = "text-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.4)]";
                 borderColor = "border-amber-500/50 bg-amber-900/5";
               }
 
-              // Calculate Pie Ratios
-              const total = (usScore + iranScore) || 1;
-              const usRatio = (usScore / total) * 100;
-              // USA starts at 0, ends at usRatio. Iran starts at usRatio, ends at 100.
-
-              // Tactical Colors
-              const colUSA = "#4A5568"; // Slate Blue-Grey
-              const colIran = "#8E2424"; // Deep Oxide Red
+              // Tactical Color: Slate Blue
+              const colUSA = "#4A5568";
 
               return (
                 <MetricCard
-                  title="DUAL-VECTOR MONITOR"
-                  value={<span className={statusColor}>{status}</span>}
-                  subLabel="US-IRAN CORRELATION INDEX"
+                  title="PENTAGON PIZZA INDEX"
+                  value={<span className={statusColor}>{usScore}%</span>}
+                  subLabel={status}
                   icon={Pizza}
                   className={borderColor}
                 >
                   <div className="flex flex-col h-full justify-between pt-2">
 
-                    {/* Tactical Donut Chart */}
+                    {/* Tactical Circular Gauge */}
                     <div className="relative h-24 w-full flex items-center justify-center">
                       {/* The Donut Ring */}
                       <div
                         className="h-20 w-20 rounded-full shadow-[0_0_15px_rgba(0,0,0,0.5)] border-2 border-white/5"
                         style={{
-                          background: `conic-gradient(${colUSA} 0% ${usRatio}%, ${colIran} ${usRatio}% 100%)`
+                          background: `conic-gradient(${colUSA} 0% ${usScore}%, transparent ${usScore}% 100%)`
                         }}
                       />
                       {/* Center Hole & Value */}
                       <div className="absolute h-14 w-14 bg-matte-black rounded-full flex flex-col items-center justify-center border border-white/10 shadow-inner">
-                        <span className="text-xl font-bold text-white/90 leading-none">{globalScore}</span>
-                        <span className="text-[8px] text-white/40 tracking-wider">NET</span>
+                        <div className="flex flex-col items-center">
+                          <span className="text-xl font-bold text-white/90 leading-none">{usScore}</span>
+                          <span className="text-[7px] text-white/40 tracking-wider mt-0.5">VOL</span>
+                        </div>
                       </div>
                     </div>
 
                     <div className="mt-1 relative overflow-hidden h-6 bg-white/5 rounded-sm border border-white/5">
                       <div className="text-[10px] text-coyote-tan/90 font-mono tracking-tight whitespace-nowrap animate-marquee flex items-center h-full px-2">
-                           // ANALYSIS: {(pizzaData?.justification || "INITIALIZING DATA LINK... STANDBY...").toUpperCase()}
+                           // MONITORING: ARLINGTON VA // {(pizzaData?.justification || "CALIBRATING LINK...").toUpperCase()}
                       </div>
                     </div>
 
@@ -232,7 +226,6 @@ export default function Home() {
           {/* RIGHT COLUMN (Cols 10-12): MARKET & INTEL */}
           <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden order-3 lg:order-none">
 
-            {/* 4. MARKET */}
             {/* 4. MARKET */}
             {(() => {
               // Risk / Odds Synchronization Logic
