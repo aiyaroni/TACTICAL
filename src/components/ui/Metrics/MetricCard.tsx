@@ -11,6 +11,7 @@ interface MetricCardProps {
     statusColor?: "coyote-tan" | "red" | "emerald";
     children?: ReactNode; // Sparkline or other visual
     className?: string;
+    noWrapper?: boolean;
 }
 
 export default function MetricCard({ title, value, subLabel, icon: Icon, children, className }: MetricCardProps) {
@@ -30,16 +31,20 @@ export default function MetricCard({ title, value, subLabel, icon: Icon, childre
                 </div>
             )}
 
-            {/* Sparkline Area */}
+            {/* Content Area (Sparkline or Custom) */}
             {children && (
-                <div className="h-8 w-full mb-3 opacity-80 mix-blend-screen overflow-hidden">
-                    {children}
-                </div>
+                noWrapper ? (
+                    <div className="flex-1 min-h-0 flex flex-col">{children}</div>
+                ) : (
+                    <div className="h-8 w-full mb-3 opacity-80 mix-blend-screen overflow-hidden">
+                        {children}
+                    </div>
+                )
             )}
 
             {/* Bottom Label */}
             {subLabel && (
-                <div className="border-t border-white/5 pt-2 text-center">
+                <div className="border-t border-white/5 pt-2 text-center mt-auto">
                     <div className="font-mono text-xs tracking-widest text-coyote-tan/90 uppercase">{subLabel}</div>
                 </div>
             )}

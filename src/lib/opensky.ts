@@ -26,7 +26,7 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
     const password = process.env.OPENSKY_CLIENT_SECRET;
 
     if (!username || !password) {
-        console.warn('OpenSky credentials missing');
+        console.warn('OpenSky credentials (OPENSKY_CLIENT_ID/SECRET) missing. Returning Mock Data equivalent (empty).');
         return [];
     }
 

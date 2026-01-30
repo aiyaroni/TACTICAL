@@ -26,8 +26,14 @@ export async function fetchConflictOdds(): Promise<MarketData | null> {
         let data = await res.json();
 
         // If no results, try 'war'
+        params.set("tag_slug", "");
+        params.set("q", "War"); // Search for "War" generally
+        res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
+        data = await res.json();
+
+        // Third attempt: "Conflict" maybe?
         if (!data || data.length === 0) {
-            params.set("tag_slug", "war");
+            params.set("q", "Conflict");
             res = await fetch(`${GAMMA_API_URL}?${params.toString()}`, { next: { revalidate: 600 } });
             data = await res.json();
         }
