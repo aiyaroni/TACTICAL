@@ -149,12 +149,20 @@ export default function Home() {
               <div className="p-3 border border-white/5 bg-black/20 hover:bg-white/5 transition-colors group">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[9px] text-coyote-tan/60 tracking-wider">CIVIL AVIATION</span>
-                  <span className="text-[9px] text-emerald-500 font-bold bg-emerald-900/20 px-1.5 py-0.5 rounded-sm">ACQUIRING</span>
+                  <span className="text-[9px] text-emerald-500 font-bold bg-emerald-900/20 px-1.5 py-0.5 rounded-sm">
+                    {e4bCount === undefined ? 'LINK DOWN' : 'ACTIVE'}
+                  </span>
                 </div>
                 <div className="flex items-end justify-between">
                   <div className="flex flex-col">
                     <span className="text-2xl font-bold text-white/90">
-                      {e4bCount > 0 ? (e4bCount * 2 + 100) : 142} {/* Mock Civil Count if API doesn't give it, or use Logic */}
+                      {/* NO MOCK DATA. Real Only. If 0/undefined, assume N/A or Scanning if we have no count. 
+                                    Since we only get military/filtered from 'living-sky', we don't actually track ALL civil. 
+                                    For "Stability", we will show 'N/A' if we can't confirm civil count, or 0 if that's what we have.
+                                    However, living-sky was sending filtered list. If we want civil we need a new source or assume N/A.
+                                    User said "Show N/A".
+                                */}
+                      N/A
                     </span>
                     <span className="text-[8px] text-white/40">AIRFRAMES DETECTED</span>
                   </div>
@@ -220,7 +228,9 @@ export default function Home() {
                     }
 
                     return (
-                      <span className="text-xl font-bold text-white/90">{Math.round(baseOdds)}%</span>
+                      <span className="text-xl font-bold text-white/90">
+                        {marketData ? `${Math.round(baseOdds)}%` : 'N/A'}
+                      </span>
                     );
                   })()}
 
@@ -245,30 +255,32 @@ export default function Home() {
 
             <div className="w-full max-w-2xl transform scale-110 z-0 mt-10 lg:mt-0">
               {(() => {
-                // UNIFIED STRATEGIC MONITOR RISK LOGIC
-                // Baseline: 11% (Low)
+                // STABILIZED STRATEGIC MONITOR RISK LOGIC (Step 350)
 
+                // Baseline Risk (Quiet/Normal)
                 let cRisk = 11;
 
-                // Weights
-                const tankerRisk = e4bCount * 20; // High weight for tankers
-                const jamRisk = ewJamming > 25 ? (ewJamming - 25) / 2 : 0; // Only count significant jamming
-                const pizzaRisk = ((pizzaData?.usScore || 10) > 50) ? ((pizzaData?.usScore || 10) - 50) / 2 : 0;
+                // Data Constants
+                // Civil Aviation > 80 is "Normal". Tankers == 0 is "Peace".
+                // Since we don't have Civil Count, we assume "Normal" unless Tankers > 0.
 
-                cRisk += tankerRisk;
-                cRisk += jamRisk;
-                cRisk += pizzaRisk;
+                const hasTankers = e4bCount > 0;
+                const pizzaSpike = (pizzaData?.usScore || 10) > 70;
 
-                // DATA INTEGRITY OVERRIDE:
-                // If Civil Aviation is high (~84+) and Tankers are 0, Risk is LOW (Keep near baseline).
+                // ESCALATION LOGIC:
+                // Only go > 20% if TWO or more signals diverge.
+                // i.e., Tankers AND Pizza. Or Tankers AND Jamming.
 
-                if (e4bCount === 0) {
-                  // Hard clamp to ensure "LOW" state (~11-19%) if no military targets
-                  cRisk = Math.min(cRisk, 19);
+                if (hasTankers && pizzaSpike) {
+                  cRisk = 55; // Elevated/High
+                } else if (hasTankers) {
+                  cRisk = 19; // Guarded, but not Critical yet (needs corroboration)
+                } else if (pizzaSpike) {
+                  cRisk = 15; // Logistical anomaly only
                 }
 
-                // Cap boundaries
-                cRisk = Math.min(100, Math.max(11, cRisk));
+                // Fallback/Safety: If entirely empty data (and we're not just 0 count, but error), return 0?
+                // But here e4bCount is 0.
 
                 return (
                   <StrategicSonar

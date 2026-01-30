@@ -56,6 +56,15 @@ export default function StrategicSonar({ blips, riskLevel, ewJamming }: Strategi
                     <div className="absolute top-0 -left-4 w-8 h-32 bg-gradient-to-t from-transparent to-tactical-teal/20 blur-xl" />
                 </motion.div>
 
+                {/* Empty State: Scanning... */}
+                {blips.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center flex-col z-20 pointer-events-none">
+                        <div className="text-[10px] text-tactical-teal/50 animate-pulse tracking-[0.2em] mb-20 uppercase font-mono">
+                            SCANNING SECTOR 7...
+                        </div>
+                    </div>
+                )}
+
                 {/* Blips */}
                 {blips.map((blip) => {
                     const parsedRisk = parseInt(riskLevel);

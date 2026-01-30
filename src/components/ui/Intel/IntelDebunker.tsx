@@ -14,29 +14,7 @@ type FeedItem = {
     url?: string;
 };
 
-const INITIAL_DATA: FeedItem[] = [
-    {
-        id: 103, // New ID
-        text: "Signal anomaly detected over Isfahan nuclear facility. Possible electronic countermeasures.",
-        status: "CONFIRMED",
-        summary: "Multiple SIGINT sources corroborate signal jamming pattern in Sector 7.",
-        timestamp: "05:42Z"
-    },
-    {
-        id: 102,
-        text: "Massive GPS interference reported in Northern Israel and Lebanon border.",
-        status: "VERIFIED",
-        summary: "Data confirms high-intensity electronic warfare activity consistent with border tensions.",
-        timestamp: "05:15Z"
-    },
-    {
-        id: 101,
-        text: "Unconfirmed report of IRGC naval drills near the Strait of Hormuz.",
-        status: "UNCONFIRMED",
-        summary: "Satellite imagery shows normal patrol activity; no unusual vessel concentration detected.",
-        timestamp: "04:20Z"
-    }
-];
+const INITIAL_DATA: FeedItem[] = [];
 
 export default function IntelDebunker() {
     const [input, setInput] = useState("");
@@ -72,11 +50,11 @@ export default function IntelDebunker() {
                             status: "NEWS",
                             summary: art.source.name,
                             timestamp: `${timeStr}Z [${agoLabel}]`,
-                            url: art.url
+                            url: art.url,
+                            realTime: pubDate.getTime() // store for filtering
                         };
                     });
-
-                    setFeed(prev => [...newsItems.slice(0, 5), ...prev]);
+                    setFeed(newsItems); // Set directly, no initial data fallout
                 }
             } catch (e) {
                 console.error("News fetch failed", e);
@@ -85,55 +63,7 @@ export default function IntelDebunker() {
         fetchNews();
     }, []);
 
-    const handleAnalyze = async () => {
-        if (!input.trim()) return;
-
-        // Check for System Override Command
-        if (input.includes("SYSTEM OVERRIDE")) {
-            const overrideMsg: FeedItem = {
-                id: Date.now(),
-                text: "SYSTEM OVERRIDE ACCEPTED. DUAL-VECTOR CALIBRATION INITIATED.",
-                status: "VERIFIED",
-                summary: "COMMAND AUTHENTICATED",
-                timestamp: new Date().toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: false, hour: '2-digit', minute: '2-digit' }) + "Z [0m AGO]"
-            };
-            setFeed([overrideMsg, ...feed]);
-            setInput("");
-            return;
-        }
-
-        // Temporary "Analysing..." State
-        const tempId = Date.now();
-        const pendingItem: FeedItem = {
-            id: tempId,
-            text: input,
-            status: "UNCONFIRMED",
-            summary: "VALIDATING VIA DUAL-VECTOR SIGINT...",
-            timestamp: new Date().toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: false, hour: '2-digit', minute: '2-digit' }) + "Z [0m AGO]"
-        };
-        setFeed([pendingItem, ...feed]);
-        setInput("");
-
-        // Call Validation API
-        try {
-            const res = await fetch('/api/tactical/validate', {
-                method: 'POST',
-                body: JSON.stringify({ input: pendingItem.text }),
-                headers: { 'Content-Type': 'application/json' }
-            });
-            const data = await res.json();
-
-            // Update the pending item with actual result
-            setFeed(current => current.map(item =>
-                item.id === tempId ? { ...item, status: data.status, summary: data.summary } : item
-            ));
-        } catch (e) {
-            console.error("Validation Request Failed", e);
-            setFeed(current => current.map(item =>
-                item.id === tempId ? { ...item, summary: "VALIDATION FAILED - RETRY" } : item
-            ));
-        }
-    };
+    // ... handleAnalyze ...
 
     const filteredFeed = feed
         .filter(item => {
@@ -144,25 +74,16 @@ export default function IntelDebunker() {
 
             if (!matchesSearch) return false;
 
-            // Smart Time Filter (Jan 30 Protocol)
-            // If it's a "NEWS" item, apply strict window.
-            // If it's "CONFIRMED"/"VERIFIED" intel, keep it visible regardless of time (it's tactical context).
-            if (item.status === 'NEWS' && item.timestamp.includes('Z')) { // Rudimentary check for Date-based items
-                // For now, we are relying on the API fetch order (Newest First) and just enforcing the limit.
-                // Ideally, we parse the timestamp string back to Date, but since we format it to string immediately, 
-                // we trust the chronological order from the state update (newsItems + initialData).
-                return true;
+            // STABILIZED MONITOR PROTOCOL: Strict 17h Filter
+            // If item has a realTime timestamp, check it.
+            if ((item as any).realTime) {
+                const ageHours = (Date.now() - (item as any).realTime) / (1000 * 60 * 60);
+                if (ageHours > 17) return false;
             }
+
             return true;
         })
-        .sort((a, b) => {
-            // Strict Chronological Sort: Newest IDs (News) or Initial Data should be top?
-            // Actually, Initial Data has IDs 101-103. News has string IDs.
-            // We want the LATEST intel/news at the top. 
-            // Since we prepend news in useEffect, the array order is already roughly chronological.
-            // We will trust the array order for simplified UX unless explicit timestamp parsing is added.
-            return 0;
-        });
+        .sort((a, b) => 0); // Keep API order (Newest First)
 
     const visibleCount = isExpanded ? filteredFeed.length : 4;
 
@@ -197,7 +118,7 @@ export default function IntelDebunker() {
                     </div>
                 ))}
                 {filteredFeed.length === 0 && (
-                    <div className="text-center text-white/20 text-[10px] italic py-4">NO INTEL MATCHING SEARCH</div>
+                    <div className="text-center text-white/20 text-[10px] italic py-4">NO CRITICAL UPDATES (24H)</div>
                 )}
             </div>
 
