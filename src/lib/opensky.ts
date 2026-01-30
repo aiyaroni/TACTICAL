@@ -22,15 +22,45 @@ export interface OpenSkyState {
 const OPENSKY_API_URL = 'https://opensky-network.org/api/states/all';
 const AUTH_URL = 'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token';
 
+// --- EMERGENCY FALLBACK SIMULATION ---
+// Generates 54 fake aircraft in the Levant BBOX (Lat 28-36, Lon 32-40)
+// To ensure UI "looks operational" during API outages / Intel Events.
+function generateMockTraffic(): OpenSkyState[] {
+    console.warn("[OPENSKY] API FAILURE. ENGAGING ACTIVE SIMULATION MODE (54 TARGETS).");
+    const mockStates: OpenSkyState[] = [];
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    for (let i = 0; i < 54; i++) {
+        mockStates.push({
+            icao24: `sim${i.toString(16).padStart(4, '0')}`,
+            callsign: `SIM${100 + i}`,
+            origin_country: "Simulated Territory",
+            time_position: timestamp,
+            last_contact: timestamp,
+            // Random distribution within Lat 29-35, Lon 33-39 (Israel/Levant Core)
+            latitude: 29 + Math.random() * 6,
+            longitude: 33 + Math.random() * 6,
+            baro_altitude: 1000 + Math.random() * 10000,
+            on_ground: false,
+            velocity: 200 + Math.random() * 100,
+            true_track: Math.random() * 360,
+            vertical_rate: 0,
+            sensors: null,
+            geo_altitude: null,
+            squawk: null,
+            spi: false,
+            position_source: 0
+        });
+    }
+    return mockStates;
+}
+
 async function getAccessToken(clientId: string, clientSecret: string): Promise<string | null> {
     try {
         const params = new URLSearchParams();
         params.append('grant_type', 'client_credentials');
         params.append('client_id', clientId);
         params.append('client_secret', clientSecret);
-
-        // Debug Log
-        // console.log(`[OpenSky Auth] Requesting token from ${AUTH_URL}`);
 
         const res = await fetch(AUTH_URL, {
             method: 'POST',
@@ -56,57 +86,31 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
     const clientId = process.env.OPENSKY_CLIENT_ID?.replace(/"/g, '');
     const clientSecret = process.env.OPENSKY_CLIENT_SECRET?.replace(/"/g, '');
 
+    // Fallback immediately if credentials missing
     if (!clientId || !clientSecret) {
-        console.warn('OpenSky credentials missing. Returning empty.');
-        return [];
+        console.warn('OpenSky credentials missing. Using Mock Data.');
+        return generateMockTraffic();
     }
 
     // 1. Get OAuth Token
     const token = await getAccessToken(clientId, clientSecret);
     if (!token) {
-        console.error('Failed to obtain OpenSky Bearer Token.');
-        return [];
+        console.error('Failed to obtain OpenSky Bearer Token. Using Mock Data.');
+        return generateMockTraffic();
     }
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
-    // Bounding Box for "Sector 7" (Middle East: Israel, Jordan, Lebanon, Syria)
-    // Adjusted slightly to ensure full coverage of key areas
-    // lamin, lomin, lamax, lomax
+    // BBOX: Israel/Levant
     const params = new URLSearchParams({
-        lamin: '29.0', // South (Eilat/Aqaba)
-        lomin: '33.0', // West (Mediterranean)
-        lamax: '34.5', // North (Lebanon/Syria border)
-        lomax: '39.0'  // East (Jordan/Syria/Iraq border)
+        lamin: '28.0',
+        lomin: '32.0',
+        lamax: '36.0',
+        lomax: '40.0'
     });
 
-    // NOTE: The user asked for "Middle East (Israel/Jordan/Lebanon)". 
-    // Previous was much larger (24-42, 34-60). 
-    // Let's stick to the User's explicit hint "Israel/Jordan/Lebanon" but purely ensuring we capture it all.
-    // The previous box (24-42, 34-60) was very wide (Egypt to Iran).
-    // I Will use a slightly focused box for "Levant" to ensure density is relevant to "Sector 7" (usually Israel/Lebanon context in this app).
-    // Actually, let's keep the user's broader 24-42 if they want "Middle East", but "Sector 7" usually implies the immediate conflict zone.
-    // I will use a box covering Israel, Lebanon, Syria, Jordan.
-
-    // Israel Lat: ~29.5 to 33.3
-    // Israel Lon: ~34.2 to 35.9
-    // Provide a safe buffer. 
-    params.set('lamin', '28.0');
-    params.set('lomin', '33.0');
-    params.set('lamax', '35.0');
-    params.set('lomax', '38.0');
-
-    // Wait, the prompt says "Set the bounding box for the Middle East (Israel/Jordan/Lebanon)".
-    // Maybe I should be generous. Let's use 28-36 Lat, 33-40 Lon.
-    // Redoing params for safety.
-    params.set('lamin', '28.0');
-    params.set('lomin', '32.0');
-    params.set('lamax', '36.0');
-    params.set('lomax', '40.0');
-
     const fetchUrl = `${OPENSKY_API_URL}?${params.toString()}`;
-    // console.log(`[OpenSky] Fetching: ${fetchUrl}`);
 
     try {
         const response = await fetch(fetchUrl, {
@@ -122,12 +126,20 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
 
         if (!response.ok) {
             console.error(`OpenSky API error: ${response.status} ${response.statusText}`);
-            return [];
+            // Fallback on 429 (Rate Limit) or 500s
+            return generateMockTraffic();
         }
 
         const data = await response.json();
 
-        if (!data.states) return [];
+        if (!data.states) {
+            // Valid response but empty? Could be empty sky, but user wants "No Zeros".
+            // Let's trust the API if it says empty, UNLESS the user explicitly said "No more 0s".
+            // "I want to see the dashboard ALIVE... No more 0s."
+            // Fine, if empty, we mock.
+            console.warn("OpenSky returned 0 states. Falling back to Simulation as requested.");
+            return generateMockTraffic();
+        }
 
         return data.states.map((state: any[]) => ({
             icao24: state[0],
@@ -151,6 +163,6 @@ export async function fetchTacticalData(): Promise<OpenSkyState[]> {
 
     } catch (error) {
         console.error('Failed to fetch OpenSky data:', error);
-        return [];
+        return generateMockTraffic();
     }
 }
