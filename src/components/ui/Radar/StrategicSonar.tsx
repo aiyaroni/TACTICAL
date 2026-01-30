@@ -12,12 +12,25 @@ type Blip = {
     lastContact: number;
 }; // Derived from OpenSkyState but simplified for UI
 
-export default function StrategicSonar() {
+interface StrategicSonarProps {
+    ewJamming?: number;
+    escalationIndex?: number;
+}
+
+export default function StrategicSonar({ ewJamming = 0, escalationIndex = 0 }: StrategicSonarProps) {
     const [blips, setBlips] = useState<Blip[]>([]);
 
-    // Risk level could be derived from number of targets or external prop. 
-    // Hardcoding '25%' as per mock requirement for now, or dynamic based on count.
-    const riskLevel = Math.min(100, blips.length * 10).toFixed(0);
+    // Risk Calculation:
+    // 1. Asset Count Baseline (10% per asset)
+    // 2. E-Warfare Impact (If >20%, assume 30% baseline risk)
+    // 3. Escalation Index (Direct mapping if > 50%)
+
+    const assetRisk = blips.length * 10;
+    const jammingRisk = ewJamming > 20 ? 30 : 0;
+    const intelRisk = escalationIndex > 50 ? escalationIndex : 0;
+
+    const rawRisk = Math.max(assetRisk, jammingRisk, intelRisk);
+    const riskLevel = Math.min(100, Math.max(rawRisk, 0)).toFixed(0);
 
     useEffect(() => {
         const fetchData = async () => {

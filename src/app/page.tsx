@@ -112,11 +112,11 @@ export default function Home() {
 
       <TacticalHeader isEmergency={isEmergency} />
 
-      <main className="flex-1 p-4 lg:p-6 relative h-auto lg:h-[calc(100vh-80px)] lg:overflow-hidden overflow-y-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 h-full">
+      <main className="flex-1 p-2 lg:p-4 relative h-auto lg:h-[calc(100vh-80px)] lg:overflow-hidden overflow-y-auto">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6 h-full">
 
           {/* LEFT COLUMN (Cols 1-3): METRICS VERTICAL STACK */}
-          <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
+          <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden order-2 lg:order-none">
 
             {/* 1. ASSETS */}
             <MetricCard
@@ -203,7 +203,7 @@ export default function Home() {
           </div>
 
           {/* CENTER COLUMN (Cols 4-9): STRATEGIC SONAR */}
-          <div className="lg:col-span-6 flex flex-col items-center justify-center relative">
+          <div className="lg:col-span-6 flex flex-col items-center justify-center relative order-1 lg:order-none">
             <div className="absolute top-2 left-0 w-full flex items-center justify-between px-10 z-30 pointer-events-none">
               <h2 className="text-xs tracking-[0.4em] font-bold text-tactical-teal uppercase opacity-80 backdrop-blur-md">
                 Live Feed // Sector 7
@@ -216,12 +216,15 @@ export default function Home() {
 
             {/* Make Radar Large */}
             <div className="w-full max-w-4xl transform scale-100 z-0">
-              <StrategicSonar />
+              <StrategicSonar
+                ewJamming={ewJamming}
+                escalationIndex={pizzaData?.globalScore || 0}
+              />
             </div>
           </div>
 
           {/* RIGHT COLUMN (Cols 10-12): MARKET & INTEL */}
-          <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden">
+          <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden order-3 lg:order-none">
 
             {/* 4. MARKET */}
             <MetricCard

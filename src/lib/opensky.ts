@@ -19,7 +19,19 @@ export interface OpenSkyState {
 }
 
 const OPENSKY_API_URL = 'https://opensky-network.org/api/states/all';
-const TARGET_ICAOS = ['ADFEB2', 'ADFEB4', 'ADFEB6'];
+// Monitoring Targets: E-4B "Nightwatch" (US) + Regional Tankers (KC-135/Il-76) + Iran Vector
+const TARGET_ICAOS = [
+    'adfeb3', // E-4B (73-1676)
+    'adfeb4', // E-4B (73-1677)
+    'adfeb5', // E-4B (74-0787)
+    'adfeb6', // E-4B (75-0125)
+    'ae01d2', // KC-135 Stratotanker
+    'ae04d7', // KC-135 Rivet Joint support
+    '154078', // Il-76TD (Regional/Cargo - Simulated for Iran Vector)
+    '738011', // EP-IFA (Iran Air A300 - Simulated Routine Traffic)
+    '738012', // EP-IBB (Iran Air A300 - Simulated)
+    '738031'  // EP-MNH (Mahan Air A340 - Simulated IRGC Logistics)
+];
 
 export async function fetchTacticalData(): Promise<OpenSkyState[]> {
     const username = process.env.OPENSKY_CLIENT_ID;

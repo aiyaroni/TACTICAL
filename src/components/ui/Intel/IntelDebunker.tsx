@@ -141,7 +141,7 @@ export default function IntelDebunker() {
 
             {/* Scrollable Feed Container - Fluid Height */}
             <div className="flex-1 min-h-0 overflow-y-auto space-y-3 mb-3 pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-tactical-teal/20 hover:scrollbar-thumb-tactical-teal/40">
-                {filteredFeed.map((item) => (
+                {filteredFeed.slice(0, 4).map((item) => (
                     <div key={item.id} className="border-l-2 border-white/10 pl-3 py-1">
                         <div className="flex items-center justify-between mb-1">
                             <span className={clsx("text-[10px] font-bold tracking-wider",
@@ -151,7 +151,7 @@ export default function IntelDebunker() {
                             )}>
                                 {item.status}
                             </span>
-                            <span className="text-white/20 text-[9px] font-mono">{item.timestamp}</span>
+                            <span className="text-amber-500 text-[10px] font-bold font-mono tracking-wide shadow-black drop-shadow-md">{item.timestamp}</span>
                         </div>
                         <a href={item.url} target="_blank" rel="noopener noreferrer" className={clsx("text-xs leading-relaxed mb-0.5 font-medium block hover:underline",
                             item.status === 'NEWS' ? "text-white/90" : "text-coyote-tan/90")}>
