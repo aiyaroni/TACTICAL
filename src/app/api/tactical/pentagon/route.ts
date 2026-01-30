@@ -1,9 +1,9 @@
 import { NextResponse } from 'next/server';
-import { analyzePentagonActivity } from '@/lib/gemini';
+import { analyzeDualVectorEscalation } from '@/lib/gemini';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-    const analysis = await analyzePentagonActivity();
+    const analysis = await analyzeDualVectorEscalation();
     return NextResponse.json(analysis);
 }
