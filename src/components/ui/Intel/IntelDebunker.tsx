@@ -63,7 +63,55 @@ export default function IntelDebunker() {
         fetchNews();
     }, []);
 
-    // ... handleAnalyze ...
+    const handleAnalyze = async () => {
+        if (!input.trim()) return;
+
+        // Check for System Override Command
+        if (input.includes("SYSTEM OVERRIDE")) {
+            const overrideMsg: FeedItem = {
+                id: Date.now(),
+                text: "SYSTEM OVERRIDE ACCEPTED. DUAL-VECTOR CALIBRATION INITIATED.",
+                status: "VERIFIED",
+                summary: "COMMAND AUTHENTICATED",
+                timestamp: new Date().toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: false, hour: '2-digit', minute: '2-digit' }) + "Z [0m AGO]"
+            };
+            setFeed([overrideMsg, ...feed]);
+            setInput("");
+            return;
+        }
+
+        // Temporary "Analysing..." State
+        const tempId = Date.now();
+        const pendingItem: FeedItem = {
+            id: tempId,
+            text: input,
+            status: "UNCONFIRMED",
+            summary: "VALIDATING VIA DUAL-VECTOR SIGINT...",
+            timestamp: new Date().toLocaleTimeString('en-US', { timeZone: 'UTC', hour12: false, hour: '2-digit', minute: '2-digit' }) + "Z [0m AGO]"
+        };
+        setFeed([pendingItem, ...feed]);
+        setInput("");
+
+        // Call Validation API
+        try {
+            const res = await fetch('/api/tactical/validate', {
+                method: 'POST',
+                body: JSON.stringify({ input: pendingItem.text }),
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+
+            // Update the pending item with actual result
+            setFeed(current => current.map(item =>
+                item.id === tempId ? { ...item, status: data.status, summary: data.summary } : item
+            ));
+        } catch (e) {
+            console.error("Validation Request Failed", e);
+            setFeed(current => current.map(item =>
+                item.id === tempId ? { ...item, summary: "VALIDATION FAILED - RETRY" } : item
+            ));
+        }
+    };
 
     const filteredFeed = feed
         .filter(item => {
