@@ -8,7 +8,7 @@ import { clsx } from "clsx";
 type FeedItem = {
     id: number | string;
     text: string;
-    status: "VERIFIED" | "FAKE" | "UNCONFIRMED" | "NEWS";
+    status: "VERIFIED" | "FAKE" | "UNCONFIRMED" | "NEWS" | "CONFIRMED";
     summary?: string;
     timestamp: string;
     url?: string;
@@ -34,6 +34,7 @@ const INITIAL_DATA: FeedItem[] = [
 export default function IntelDebunker() {
     const [input, setInput] = useState("");
     const [feed, setFeed] = useState<FeedItem[]>(INITIAL_DATA);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     // Fetch News
     useEffect(() => {
@@ -67,8 +68,7 @@ export default function IntelDebunker() {
                             url: art.url
                         };
                     });
-                    // Interleave or append news. For now, we prepend news to the initial tactical data logic?
-                    // Let's just combine them.
+
                     setFeed(prev => [...newsItems.slice(0, 5), ...prev]);
                 }
             } catch (e) {
@@ -77,8 +77,6 @@ export default function IntelDebunker() {
         };
         fetchNews();
     }, []);
-
-
 
     const handleAnalyze = async () => {
         if (!input.trim()) return;
@@ -136,17 +134,19 @@ export default function IntelDebunker() {
         (item.summary && item.summary.toLowerCase().includes(input.toLowerCase()))
     );
 
+    const visibleCount = isExpanded ? filteredFeed.length : 3;
+
     return (
         <MetricCard title="INTEL & NEWS" className="h-full flex flex-col p-4 !pb-2" noWrapper>
 
             {/* Scrollable Feed Container - Fluid Height */}
-            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 mb-3 pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-tactical-teal/20 hover:scrollbar-thumb-tactical-teal/40">
-                {filteredFeed.slice(0, 4).map((item) => (
+            <div className="flex-1 min-h-0 overflow-y-auto space-y-3 mb-1 pr-1 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-tactical-teal/20 hover:scrollbar-thumb-tactical-teal/40">
+                {filteredFeed.slice(0, visibleCount).map((item) => (
                     <div key={item.id} className="border-l-2 border-white/10 pl-3 py-1">
                         <div className="flex items-center justify-between mb-1">
                             <span className={clsx("text-[10px] font-bold tracking-wider",
-                                item.status === "VERIFIED" ? "text-emerald-400" :
-                                    item.status === "FAKE" ? "text-red-500" :
+                                item.status === "CONFIRMED" || item.status === "VERIFIED" ? "text-emerald-400" :
+                                    item.status === "FAKE" || item.status === "UNCONFIRMED" ? "text-red-500" :
                                         item.status === "NEWS" ? "text-blue-400" : "text-amber-400"
                             )}>
                                 {item.status}
@@ -171,6 +171,19 @@ export default function IntelDebunker() {
                 )}
             </div>
 
+            {/* Read More Toggle */}
+            {filteredFeed.length > 3 && (
+                <div className="flex justify-center -mt-1 mb-2">
+                    <button
+                        onClick={() => setIsExpanded(!isExpanded)}
+                        className="text-[9px] text-tactical-teal/70 hover:text-tactical-teal uppercase tracking-widest font-bold flex items-center gap-1"
+                    >
+                        {isExpanded ? "[-] Collapse Archive" : `[+] View Strategic Archive (${filteredFeed.length - 3} Hidden)`}
+                        {isExpanded ? <CheckCircle className="h-2 w-2" /> : <ShieldAlert className="h-2 w-2" />}
+                    </button>
+                </div>
+            )}
+
             {/* Input Area (Search & Submit) */}
             <div className="relative pt-2 border-t border-white/5">
                 <input
@@ -178,7 +191,7 @@ export default function IntelDebunker() {
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => e.key === 'Enter' && handleAnalyze()}
                     placeholder="Refine Intel / Type 'SYSTEM OVERRIDE'..."
-                    className="w-full bg-white/5 border border-white/10 p-2 pl-3 pr-8 text-[10px] tracking-widest text-coyote-tan placeholder:text-white/20 focus:outline-none focus:border-tactical-teal/50 font-mono rounded-none transition-colors"
+                    className="w-full bg-white/5 border border-white/10 p-2 pl-3 pr-8 text-[10px] tracking-widest text-coyote-tan placeholder:text-zinc-400 focus:outline-none focus:border-tactical-teal/50 font-mono rounded-none transition-colors"
                 />
                 <button
                     onClick={handleAnalyze}

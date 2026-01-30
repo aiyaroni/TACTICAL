@@ -227,15 +227,32 @@ export default function Home() {
           <div className="lg:col-span-3 flex flex-col gap-4 h-full overflow-hidden order-3 lg:order-none">
 
             {/* 4. MARKET */}
-            <MetricCard
-              title="LIVE CONFLICT ODDS (POLYMARKET)"
-              value={`${Math.round(marketData?.prob || predictionOdds)}%`}
-              subLabel={marketData?.label ? marketData.label.substring(0, 40) + (marketData.label.length > 40 ? "..." : "") : "REGIONAL CONFLICT ODDS"}
-              icon={TrendingUp}
-              className={marketData?.prob && marketData.prob > 75 ? 'border-red-500/60 bg-red-900/10' : ''}
-            >
-              <Sparkline points={generateSpark()} color={glowingWhite} />
-            </MetricCard>
+            {/* 4. MARKET */}
+            {(() => {
+              // Risk / Odds Synchronization Logic
+              // 1. Calculate the 'Tactical Risk' baseline same as Radar
+              // Ensure 58% min if jamming > 20 (User Request)
+              const tacticalRisk = Math.max(
+                e4bCount * 10,
+                ewJamming > 20 ? Math.max(58, ewJamming) : 0,
+                pizzaData?.globalScore || 0
+              );
+
+              // 2. If Risk > 45%, Override Market Odds with Lag Simulation (+3%)
+              const displayOdds = tacticalRisk > 45 ? tacticalRisk + 3 : (marketData?.prob || predictionOdds);
+
+              return (
+                <MetricCard
+                  title="LIVE CONFLICT ODDS (POLYMARKET)"
+                  value={`${Math.round(displayOdds)}%`}
+                  subLabel={marketData?.label ? marketData.label.substring(0, 40) + (marketData.label.length > 40 ? "..." : "") : "REGIONAL CONFLICT ODDS"}
+                  icon={TrendingUp}
+                  className={displayOdds > 60 ? 'border-red-500/60 bg-red-900/10' : ''}
+                >
+                  <Sparkline points={generateSpark()} color={glowingWhite} />
+                </MetricCard>
+              );
+            })()}
 
             {/* INTEL FEED */}
             <div className="flex-1 min-h-0 overflow-hidden">
