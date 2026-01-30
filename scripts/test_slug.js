@@ -1,0 +1,1 @@
+const fetch=require('node-fetch'); async function t(){const res=await fetch('https://gamma-api.polymarket.com/markets?slug=will-israel-and-iran-be-at-war-by-2026'); const d=await res.json(); console.log(JSON.stringify(d,null,2));} t();

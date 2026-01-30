@@ -2,7 +2,7 @@ const https = require('https');
 
 // --- OPENSKY CONFIG ---
 const CLIENT_ID = 'booldeals-api-client';
-const CLIENT_SECRET = '13579Bool1';
+const CLIENT_SECRET = 'M0uHDKFeKY0heM7hNWZ5Ay8I6Iu5IxHo';
 // Corrected Realm Path: Keycloak often uses /auth/realms/...
 const AUTH_URL = 'https://auth.opensky-network.org/auth/realms/opensky-network/protocol/openid-connect/token';
 const API_URL = 'https://opensky-network.org/api/states/all';
