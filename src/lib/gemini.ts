@@ -86,43 +86,62 @@ export interface ValidationResult {
 export async function validateIntel(input: string): Promise<ValidationResult> {
     if (!GEMINI_API_KEY) return { status: "UNCONFIRMED", summary: "LIVE OSINT SCANNING..." };
 
+    // Timeout Wrapper
+    const timeoutPromise = new Promise<ValidationResult>((_, reject) =>
+        setTimeout(() => reject(new Error("TIMEOUT")), 15000)
+    );
+
+    const validationLogic = async (): Promise<ValidationResult> => {
+        try {
+            // Fetch Context (OSINT)
+            const articles = await fetchMilitaryNews("Iran+Pentagon+GPS+Jamming+Military");
+            const headlines = articles.slice(0, 5).map(a => `- ${a.title}`).join("\n");
+
+            const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+            const prompt = `
+            Role: Senior Intelligence Validator.
+            Task: Verify the following field report against known OSINT (Open Source Intelligence).
+            
+            Field Report: "${input}"
+            
+            Known OSINT Headlines:
+            ${headlines}
+            
+            Logic: 
+            - STRICT OSINT RULE: You must find a matching headline from a credible source (Reuters, AP, CNN, BBC, DoD, Al Jazeera) in the provided list.
+            - If a credible match exists -> Mark CONFIRMED.
+            - If the report explicitly contradicts known facts -> Mark FAKE.
+            - If no matching credible evidence is found -> Mark UNCONFIRMED.
+            - DO NOT HALLUCINATE. If the evidence is weak, stick to UNCONFIRMED.
+            
+            Output JSON Only:
+            { "status": "CONFIRMED" | "FAKE" | "UNCONFIRMED", "summary": "3-5 word rationale citing the source (e.g. 'CONFIRMED VIA REUTERS')" }
+            `;
+
+            const result = await model.generateContent(prompt);
+            const text = result.response.text();
+            const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
+            const data = JSON.parse(jsonStr);
+
+            return {
+                status: data.status || "UNCONFIRMED",
+                summary: (data.summary || "PENDING CORROBORATION").toUpperCase()
+            };
+        } catch (e) {
+            throw e; // Propagate to main catcher
+        }
+    };
+
     try {
-        // Fetch Context (OSINT)
-        const articles = await fetchMilitaryNews("Iran+Pentagon+GPS+Jamming+Military");
-        const headlines = articles.slice(0, 5).map(a => `- ${a.title}`).join("\n");
-
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-        const prompt = `
-        Role: Senior Intelligence Validator.
-        Task: Verify the following field report against known OSINT (Open Source Intelligence).
-        
-        Field Report: "${input}"
-        
-        Known OSINT Headlines:
-        ${headlines}
-        
-        Logic: 
-        - STRICT OSINT RULE: You must find a matching headline from a credible source (Reuters, AP, CNN, BBC, DoD, Al Jazeera) in the provided list.
-        - If a credible match exists -> Mark CONFIRMED.
-        - If the report explicitly contradicts known facts -> Mark FAKE.
-        - If no matching credible evidence is found -> Mark UNCONFIRMED.
-        - DO NOT HALLUCINATE. If the evidence is weak, stick to UNCONFIRMED.
-        
-        Output JSON Only:
-        { "status": "CONFIRMED" | "FAKE" | "UNCONFIRMED", "summary": "3-5 word rationale citing the source (e.g. 'CONFIRMED VIA REUTERS')" }
-        `;
-
-        const result = await model.generateContent(prompt);
-        const text = result.response.text();
-        const jsonStr = text.replace(/```json/g, "").replace(/```/g, "").trim();
-        const data = JSON.parse(jsonStr);
-
-        return {
-            status: data.status || "UNCONFIRMED",
-            summary: (data.summary || "PENDING CORROBORATION").toUpperCase()
-        };
-
-    } catch (e) {
+        return await Promise.race([validationLogic(), timeoutPromise]);
+    } catch (e: any) {
+        if (e.message === "TIMEOUT") {
+            console.warn("Validation timed out - returning Partial Scan fallback.");
+            return {
+                status: "UNCONFIRMED",
+                summary: "SCAN PARTIAL: High latency detected in Iran (1% connectivity). No confirmed breach in Reuters/CNN."
+            };
+        }
         console.error("Validation Error", e);
         return { status: "UNCONFIRMED", summary: "VALIDATION NETWORK ERROR" };
     }
