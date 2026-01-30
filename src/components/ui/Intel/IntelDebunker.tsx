@@ -197,6 +197,7 @@ export default function IntelDebunker() {
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
                     onKeyDown={(e) => {
+                        // Force verification of Enter key submission
                         if (e.key === 'Enter') {
                             handleAnalyze();
                         }
