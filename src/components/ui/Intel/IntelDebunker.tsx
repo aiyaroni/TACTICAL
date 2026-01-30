@@ -42,14 +42,31 @@ export default function IntelDebunker() {
                 const res = await fetch('/api/tactical/news');
                 const data = await res.json();
                 if (data.articles) {
-                    const newsItems: FeedItem[] = data.articles.map((art: any, i: number) => ({
-                        id: `news-${i}`,
-                        text: art.title,
-                        status: "NEWS",
-                        summary: art.source.name,
-                        timestamp: new Date(art.publishedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) + "Z",
-                        url: art.url
-                    }));
+                    const newsItems: FeedItem[] = data.articles.map((art: any, i: number) => {
+                        const pubDate = new Date(art.publishedAt);
+
+                        // Fix Timezone to UTC
+                        const timeStr = pubDate.toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false,
+                            timeZone: 'UTC'
+                        });
+
+                        // Calculate "Minutes Ago"
+                        const diffMs = new Date().getTime() - pubDate.getTime();
+                        const diffMins = Math.floor(diffMs / 60000);
+                        const agoLabel = diffMins < 60 ? `${diffMins}m AGO` : `${Math.floor(diffMins / 60)}h AGO`;
+
+                        return {
+                            id: `news-${i}`,
+                            text: art.title,
+                            status: "NEWS",
+                            summary: art.source.name,
+                            timestamp: `${timeStr}Z [${agoLabel}]`,
+                            url: art.url
+                        };
+                    });
                     // Interleave or append news. For now, we prepend news to the initial tactical data logic?
                     // Let's just combine them.
                     setFeed(prev => [...newsItems.slice(0, 5), ...prev]);
