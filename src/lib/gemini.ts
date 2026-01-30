@@ -102,13 +102,14 @@ export async function validateIntel(input: string): Promise<ValidationResult> {
         ${headlines}
         
         Logic: 
-        - If the report matches key details in headlines (e.g. "GPS", "Isfahan", "Drills"), mark CONFIRMED.
-        - If the report explicitly contradicts known facts, mark FAKE.
-        - If no matching data exists, mark UNCONFIRMED.
-        - *SPECIAL OVERRIDE*: If the input mentions "Isfahan" AND "GPS" (as per the User's Operational Test), mark CONFIRMED as this is a known active vector.
+        - STRICT OSINT RULE: You must find a matching headline from a credible source (Reuters, AP, CNN, BBC, DoD, Al Jazeera) in the provided list.
+        - If a credible match exists -> Mark CONFIRMED.
+        - If the report explicitly contradicts known facts -> Mark FAKE.
+        - If no matching credible evidence is found -> Mark UNCONFIRMED.
+        - DO NOT HALLUCINATE. If the evidence is weak, stick to UNCONFIRMED.
         
         Output JSON Only:
-        { "status": "CONFIRMED" | "FAKE" | "UNCONFIRMED", "summary": "3-5 word rationale (e.g. 'MATCHES REUTERS REPORT')" }
+        { "status": "CONFIRMED" | "FAKE" | "UNCONFIRMED", "summary": "3-5 word rationale citing the source (e.g. 'CONFIRMED VIA REUTERS')" }
         `;
 
         const result = await model.generateContent(prompt);
